@@ -17,4 +17,3 @@ go get gitlab.com/tozd/go/x
 
 There is also a [read-only GitHub mirror available](https://github.com/tozd/go-x),
 if you need to fork the project there.
-
