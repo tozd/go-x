@@ -35,6 +35,7 @@ func TestRetryableResponseSimple(t *testing.T) {
 	res, err := x.NewRetryableResponse(client, req)
 	require.NoError(t, err)
 	require.NotNil(t, res)
+	defer res.Close()
 
 	assert.Equal(t, "14", res.Header.Get("Content-Length"))
 	assert.Equal(t, int64(14), res.Size())
@@ -80,6 +81,7 @@ func TestRetryableResponseRetry(t *testing.T) {
 	res, err := x.NewRetryableResponse(client, req)
 	require.NoError(t, err)
 	require.NotNil(t, res)
+	defer res.Close()
 
 	assert.Equal(t, "14", res.Header.Get("Content-Length"))
 	assert.Equal(t, int64(14), res.Size())
