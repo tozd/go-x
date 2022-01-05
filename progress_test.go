@@ -35,7 +35,7 @@ func TestTicker(t *testing.T) {
 	require.NotNil(t, ticker)
 	defer ticker.Stop()
 
-	l := sync.RWMutex{}
+	l := sync.Mutex{}
 	progress := []x.Progress{}
 
 	go func() {
