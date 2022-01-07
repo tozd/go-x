@@ -104,10 +104,11 @@ func NewTicker(ctx context.Context, c counter, size int64, interval time.Duratio
 					remaining: estimated.Sub(now),
 					estimated: estimated,
 				}
-				if ctx.Err() != nil {
+				select {
+				case <-ctx.Done():
 					return
+				case output <- progress:
 				}
-				output <- progress
 			}
 		}
 	}()
