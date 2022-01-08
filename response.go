@@ -119,13 +119,16 @@ func (d *RetryableResponse) start() errors.E {
 		body, _ := io.ReadAll(resp.Body)
 		return errors.Errorf("bad response status (%s): %s", resp.Status, strings.TrimSpace(string(body)))
 	}
-	lengthStr := resp.Header.Get("Content-Length")
-	if lengthStr == "" {
-		return errors.Errorf("missing Content-Length header in response")
+	length := resp.ContentLength
+	if length == -1 {
+		// Check GCP header. GCP omits Content-Length header when response is Content-Encoding compressed.
+		l, err := strconv.ParseInt(resp.Header.Get("X-Goog-Stored-Content-Length"), 10, 64) //nolint:gomnd
+		if err == nil {
+			length = l
+		}
 	}
-	length, err := strconv.ParseInt(lengthStr, 10, 64) //nolint:gomnd
-	if err != nil {
-		return errors.WithStack(err)
+	if length == -1 {
+		return errors.Errorf("missing Content-Length header in response")
 	}
 
 	size := d.Size()
