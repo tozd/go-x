@@ -32,5 +32,5 @@ func TestMarshalWithoutEscapeHTML(t *testing.T) {
 
 	data, err := x.MarshalWithoutEscapeHTML(&Test{Field: "<body></body>"})
 	assert.NoError(t, err)
-	assert.Equal(t, `{"field":"<body></body>"}`+"\n", string(data))
+	assert.Equal(t, `{"field":"<body></body>"}`, string(data))
 }
