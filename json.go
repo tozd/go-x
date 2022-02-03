@@ -29,5 +29,9 @@ func MarshalWithoutEscapeHTML(v interface{}) ([]byte, errors.E) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return buf.Bytes(), nil
+	b := buf.Bytes()
+	if len(b) > 0 {
+		return b[:len(b)-1], nil
+	}
+	return b, nil
 }
