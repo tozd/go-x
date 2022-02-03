@@ -24,3 +24,13 @@ func TestUnmarshalWithoutUnknownFields(t *testing.T) {
 	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field2": "abc"}`), &v)
 	assert.Error(t, err)
 }
+
+func TestMarshalWithoutEscapeHTML(t *testing.T) {
+	type Test struct {
+		Field string `json:"field"`
+	}
+
+	data, err := x.MarshalWithoutEscapeHTML(&Test{Field: "<body></body>"})
+	assert.NoError(t, err)
+	assert.Equal(t, `{"field":"<body></body>"}`+"\n", string(data))
+}
