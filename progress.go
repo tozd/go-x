@@ -7,6 +7,24 @@ import (
 	"time"
 )
 
+// Counter is an int64 value which implements counter interface.
+type Counter int64
+
+// Increment increases counter by 1.
+func (c *Counter) Increment() {
+	atomic.AddInt64((*int64)(c), 1)
+}
+
+// Increment increases counter by n.
+func (c *Counter) Add(n int64) {
+	atomic.AddInt64((*int64)(c), n)
+}
+
+// Count implements counter interface for Counter.
+func (c *Counter) Count() int64 {
+	return atomic.LoadInt64((*int64)(c))
+}
+
 // CountingReader is an io.Reader proxy which counts the number of bytes
 // it read and passed on.
 type CountingReader struct {
