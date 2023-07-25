@@ -12,6 +12,8 @@ import (
 )
 
 func TestRatPrecision(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		n int64
 		m int64
@@ -36,7 +38,10 @@ func TestRatPrecision(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		test := test
 		t.Run(fmt.Sprintf("%d/%d", test.n, test.m), func(t *testing.T) {
+			t.Parallel()
+
 			l, q := x.RatPrecision(big.NewRat(test.n, test.m))
 			assert.Equal(t, test.k, l)
 			assert.Equal(t, test.r, q)
@@ -45,6 +50,8 @@ func TestRatPrecision(t *testing.T) {
 }
 
 func TestRatPrecisionString(t *testing.T) {
+	t.Parallel()
+
 	tests := []string{
 		"123.34",
 		"-2342343.2321234442",
@@ -52,8 +59,11 @@ func TestRatPrecisionString(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		test := test
 		t.Run(test, func(t *testing.T) {
-			n, ok := new(big.Rat).SetString(test)
+			t.Parallel()
+
+			n, ok := new(big.Rat).SetString(test) //nolint:gosec
 			require.True(t, ok)
 			l, q := x.RatPrecision(n)
 			assert.Equal(t, 0, q)

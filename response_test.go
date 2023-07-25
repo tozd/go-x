@@ -20,6 +20,8 @@ import (
 const responseBody = "Hello, client\n"
 
 func TestRetryableResponseSimple(t *testing.T) {
+	t.Parallel()
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, responseBody)
 	}))
@@ -46,6 +48,8 @@ func TestRetryableResponseSimple(t *testing.T) {
 }
 
 func TestRetryableResponseRetry(t *testing.T) {
+	t.Parallel()
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if reqRange := r.Header.Get("Range"); reqRange != "" {
 			require.True(t, strings.HasPrefix(reqRange, "bytes="))

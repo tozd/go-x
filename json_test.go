@@ -9,6 +9,8 @@ import (
 )
 
 func TestUnmarshalWithoutUnknownFields(t *testing.T) {
+	t.Parallel()
+
 	type Test struct {
 		Field string
 	}
@@ -39,6 +41,8 @@ func TestUnmarshalWithoutUnknownFields(t *testing.T) {
 }
 
 func TestMarshalWithoutEscapeHTML(t *testing.T) {
+	t.Parallel()
+
 	type Test struct {
 		Field string `json:"field"`
 	}

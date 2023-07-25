@@ -5,6 +5,8 @@ import (
 	"io"
 	"sync/atomic"
 	"time"
+
+	"gitlab.com/tozd/go/errors"
 )
 
 // Counter is an int64 value which implements counter interface.
@@ -45,7 +47,7 @@ func NewCountingReader(reader io.Reader) *CountingReader {
 func (c *CountingReader) Read(p []byte) (int, error) {
 	n, err := c.Reader.Read(p)
 	atomic.AddInt64(&c.count, int64(n))
-	return n, err
+	return n, errors.WithStack(err)
 }
 
 // Count implements counter interface for CountingReader.

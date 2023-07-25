@@ -5,11 +5,11 @@ import (
 )
 
 var (
-	zeroInt = big.NewInt(0)
-	oneInt  = big.NewInt(1)
-	twoInt  = big.NewInt(2)  //nolint:gomnd
-	fiveInt = big.NewInt(5)  //nolint:gomnd
-	tenInt  = big.NewInt(10) //nolint:gomnd
+	zeroInt = big.NewInt(0)  //nolint:gochecknoglobals
+	oneInt  = big.NewInt(1)  //nolint:gochecknoglobals
+	twoInt  = big.NewInt(2)  //nolint:gomnd,gochecknoglobals
+	fiveInt = big.NewInt(5)  //nolint:gomnd,gochecknoglobals
+	tenInt  = big.NewInt(10) //nolint:gomnd,gochecknoglobals
 )
 
 // RatPrecision computes for rat the number of non-repeating digits on the right

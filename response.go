@@ -47,9 +47,9 @@ func (d *RetryableResponse) Read(p []byte) (int, error) {
 	count := atomic.AddInt64(&d.count, int64(n))
 
 	size := d.Size()
-	if count == size {
+	if count == size { //nolint:nestif
 		// We read everything, just return as-is.
-		return n, err
+		return n, errors.WithStack(err)
 	} else if count > size {
 		if err != nil {
 			return n, errors.Wrapf(err, "read beyond the expected end of the response body (%d vs. %d)", count, size)
@@ -57,7 +57,7 @@ func (d *RetryableResponse) Read(p []byte) (int, error) {
 		return n, errors.Errorf("read beyond the expected end of the response body (%d vs. %d)", count, size)
 	} else if contextErr := d.req.Context().Err(); contextErr != nil {
 		// Do not retry on context.Canceled or context.DeadlineExceeded.
-		return n, contextErr
+		return n, errors.WithStack(contextErr)
 	} else if err != nil {
 		// We have not read everything, but we got an error. We retry.
 		errStart := d.start()
@@ -70,7 +70,7 @@ func (d *RetryableResponse) Read(p []byte) (int, error) {
 		return d.Read(p)
 	} else {
 		// Something else, just return as-is.
-		return n, err
+		return n, errors.WithStack(err)
 	}
 }
 
@@ -122,7 +122,7 @@ func (d *RetryableResponse) start() errors.E {
 	length := resp.ContentLength
 	if length == -1 {
 		// Check GCP header. GCP omits Content-Length header when response is Content-Encoding compressed.
-		l, err := strconv.ParseInt(resp.Header.Get("X-Goog-Stored-Content-Length"), 10, 64) //nolint:gomnd
+		l, err := strconv.ParseInt(resp.Header.Get("X-Goog-Stored-Content-Length"), 10, 64)
 		if err == nil {
 			length = l
 		}

@@ -17,6 +17,8 @@ import (
 )
 
 func TestInferProjectID(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		remote    string
 		projectID string
@@ -26,7 +28,10 @@ func TestInferProjectID(t *testing.T) {
 	}
 
 	for k, tt := range tests {
+		tt := tt
 		t.Run(fmt.Sprintf("case=%d", k), func(t *testing.T) {
+			t.Parallel()
+
 			tempDir := t.TempDir()
 			repository, err := git.PlainInit(tempDir, false)
 			require.NoError(t, err)
@@ -43,12 +48,17 @@ func TestInferProjectID(t *testing.T) {
 			_, err = workTree.Add("file.txt")
 			require.NoError(t, err)
 			_, err = workTree.Commit("Initial commmit.", &git.CommitOptions{
-				Author: author,
+				All:       false,
+				Author:    author,
+				Committer: nil,
+				Parents:   nil,
+				SignKey:   nil,
 			})
 			require.NoError(t, err)
 			_, err = repository.CreateRemote(&config.RemoteConfig{
-				Name: "origin",
-				URLs: []string{tt.remote},
+				Name:  "origin",
+				URLs:  []string{tt.remote},
+				Fetch: nil,
 			})
 			require.NoError(t, err)
 			projectID, err := x.InferGitLabProjectID(tempDir)
