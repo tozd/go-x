@@ -6,7 +6,7 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/stretchr/testify v1.7.0
 	github.com/whilp/git-urls v1.0.0
-	gitlab.com/tozd/go/errors v0.3.0
+	gitlab.com/tozd/go/errors v0.5.0
 )
 
 require github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
