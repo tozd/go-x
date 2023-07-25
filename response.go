@@ -49,6 +49,10 @@ func (d *RetryableResponse) Read(p []byte) (int, error) {
 	size := d.Size()
 	if count == size { //nolint:nestif
 		// We read everything, just return as-is.
+		if err == io.EOF { //nolint:errorlint
+			// See: https://github.com/golang/go/issues/39155
+			return n, io.EOF
+		}
 		return n, errors.WithStack(err)
 	} else if count > size {
 		if err != nil {
@@ -57,6 +61,10 @@ func (d *RetryableResponse) Read(p []byte) (int, error) {
 		return n, errors.Errorf("read beyond the expected end of the response body (%d vs. %d)", count, size)
 	} else if contextErr := d.req.Context().Err(); contextErr != nil {
 		// Do not retry on context.Canceled or context.DeadlineExceeded.
+		if contextErr == io.EOF { //nolint:errorlint
+			// See: https://github.com/golang/go/issues/39155
+			return n, io.EOF
+		}
 		return n, errors.WithStack(contextErr)
 	} else if err != nil {
 		// We have not read everything, but we got an error. We retry.
@@ -70,6 +78,10 @@ func (d *RetryableResponse) Read(p []byte) (int, error) {
 		return d.Read(p)
 	} else {
 		// Something else, just return as-is.
+		if err == io.EOF { //nolint:errorlint
+			// See: https://github.com/golang/go/issues/39155
+			return n, io.EOF
+		}
 		return n, errors.WithStack(err)
 	}
 }
