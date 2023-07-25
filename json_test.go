@@ -23,6 +23,19 @@ func TestUnmarshalWithoutUnknownFields(t *testing.T) {
 
 	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field2": "abc"}`), &v)
 	assert.Error(t, err)
+
+	// Extra payload should error.
+	// See: https://github.com/golang/go/issues/36225
+	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field": "abc"} xxx`), &v)
+	assert.Error(t, err)
+	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field": "abc"} ]`), &v)
+	assert.Error(t, err)
+	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field": "abc"} {`), &v)
+	assert.Error(t, err)
+
+	// Extra whitespace should not error.
+	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field": "abc"} `), &v)
+	assert.NoError(t, err)
 }
 
 func TestMarshalWithoutEscapeHTML(t *testing.T) {

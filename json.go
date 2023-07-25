@@ -3,6 +3,7 @@ package x
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 
 	"gitlab.com/tozd/go/errors"
 )
@@ -15,6 +16,10 @@ func UnmarshalWithoutUnknownFields(data []byte, v interface{}) errors.E {
 	err := decoder.Decode(v)
 	if err != nil {
 		return errors.WithStack(err)
+	}
+	_, err = decoder.Token()
+	if err == nil || !errors.Is(err, io.EOF) {
+		return errors.New("invalid data after top-level value")
 	}
 	return nil
 }
