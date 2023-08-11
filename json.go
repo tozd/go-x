@@ -36,6 +36,7 @@ func MarshalWithoutEscapeHTML(v interface{}) ([]byte, errors.E) {
 	}
 	b := buf.Bytes()
 	if len(b) > 0 {
+		// Remove trailing \n which is added by Encode.
 		return b[:len(b)-1], nil
 	}
 	return b, nil
