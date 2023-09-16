@@ -47,7 +47,7 @@ func (d *RetryableResponse) Read(p []byte) (int, error) {
 	count := atomic.AddInt64(&d.count, int64(n))
 
 	size := d.Size()
-	if count == size { //nolint:nestif
+	if count == size {
 		// We read everything, just return as-is.
 		if err == io.EOF { //nolint:errorlint
 			// See: https://github.com/golang/go/issues/39155
