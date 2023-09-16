@@ -8,6 +8,8 @@ import (
 	"gitlab.com/tozd/go/errors"
 )
 
+var ErrJSONUnmarshalExtraData = errors.Base("invalid data after top-level value")
+
 // UnmarshalWithoutUnknownFields is a standard JSON unmarshal, just
 // that it returns an error if there is any unknown field present in JSON.
 func UnmarshalWithoutUnknownFields(data []byte, v interface{}) errors.E {
@@ -19,7 +21,7 @@ func UnmarshalWithoutUnknownFields(data []byte, v interface{}) errors.E {
 	}
 	_, err = decoder.Token()
 	if err == nil || !errors.Is(err, io.EOF) {
-		return errors.New("invalid data after top-level value")
+		return errors.WithStack(ErrJSONUnmarshalExtraData)
 	}
 	return nil
 }

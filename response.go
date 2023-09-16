@@ -13,6 +13,14 @@ import (
 	"gitlab.com/tozd/go/errors"
 )
 
+var (
+	ErrResponseClosed               = errors.Base("response already closed")
+	ErrResponseReadBeyondEnd        = errors.Base("read beyond the expected end of the response body")
+	ErrResponseBadStatus            = errors.Base("bad response status")
+	ErrResponseMissingContentLength = errors.Base("missing Content-Length header in response")
+	ErrResponseLengthMismatch       = errors.Base("content after retry has different length than before")
+)
+
 // RetryableResponse reads the response body until it is completely read.
 //
 // If reading fails before full contents have been read
@@ -40,7 +48,7 @@ func (d *RetryableResponse) Read(p []byte) (int, error) {
 	d.lock.Unlock()
 
 	if resp == nil {
-		return 0, errors.New("response already closed")
+		return 0, errors.WithStack(ErrResponseClosed)
 	}
 
 	n, err := resp.Body.Read(p)
@@ -56,9 +64,16 @@ func (d *RetryableResponse) Read(p []byte) (int, error) {
 		return n, errors.WithStack(err)
 	} else if count > size {
 		if err != nil {
-			return n, errors.Wrapf(err, "read beyond the expected end of the response body (%d vs. %d)", count, size)
+			errE := errors.WrapWith(err, ErrResponseReadBeyondEnd)
+			errors.Details(errE)["count"] = count
+			errors.Details(errE)["size"] = size
+			return n, errE
 		}
-		return n, errors.Errorf("read beyond the expected end of the response body (%d vs. %d)", count, size)
+		return n, errors.WithDetails(
+			ErrResponseReadBeyondEnd,
+			"count", count,
+			"size", size,
+		)
 	} else if contextErr := d.req.Context().Err(); contextErr != nil {
 		// Do not retry on context.Canceled or context.DeadlineExceeded.
 		if contextErr == io.EOF { //nolint:errorlint
@@ -129,7 +144,11 @@ func (d *RetryableResponse) start() errors.E {
 	}
 	if (count > 0 && resp.StatusCode != http.StatusPartialContent) || (count <= 0 && resp.StatusCode != http.StatusOK) {
 		body, _ := io.ReadAll(resp.Body)
-		return errors.Errorf("bad response status (%s): %s", resp.Status, strings.TrimSpace(string(body)))
+		return errors.WithDetails(
+			ErrResponseBadStatus,
+			"status", resp.Status,
+			"body", strings.TrimSpace(string(body)),
+		)
 	}
 	length := resp.ContentLength
 	if length == -1 {
@@ -140,13 +159,17 @@ func (d *RetryableResponse) start() errors.E {
 		}
 	}
 	if length == -1 {
-		return errors.Errorf("missing Content-Length header in response")
+		return errors.WithStack(ErrResponseMissingContentLength)
 	}
 
 	size := d.Size()
 	if count > 0 {
 		if count+length != size {
-			return errors.Errorf("content after retry has different length (%d) than before (%d)", count+length, size)
+			return errors.WithDetails(
+				ErrResponseLengthMismatch,
+				"new", count+length,
+				"old", size,
+			)
 		}
 	} else {
 		atomic.StoreInt64(&d.size, length)
