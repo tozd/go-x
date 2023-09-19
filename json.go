@@ -29,8 +29,8 @@ func UnmarshalWithoutUnknownFields(data []byte, v interface{}) errors.E {
 // MarshalWithoutEscapeHTML is a standard JSON marshal, just that
 // it does not escape HTML characters.
 func MarshalWithoutEscapeHTML(v interface{}) ([]byte, errors.E) {
-	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
+	buf := new(bytes.Buffer)
+	encoder := json.NewEncoder(buf)
 	encoder.SetEscapeHTML(false)
 	err := encoder.Encode(v)
 	if err != nil {
