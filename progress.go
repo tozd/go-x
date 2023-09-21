@@ -47,6 +47,10 @@ func NewCountingReader(reader io.Reader) *CountingReader {
 func (c *CountingReader) Read(p []byte) (int, error) {
 	n, err := c.Reader.Read(p)
 	atomic.AddInt64(&c.count, int64(n))
+	if err == io.EOF { //nolint:errorlint
+		// See: https://github.com/golang/go/issues/39155
+		return n, io.EOF
+	}
 	return n, errors.WithStack(err)
 }
 
