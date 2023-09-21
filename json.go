@@ -12,6 +12,7 @@ var ErrJSONUnmarshalExtraData = errors.Base("invalid data after top-level value"
 
 // UnmarshalWithoutUnknownFields is a standard JSON unmarshal, just
 // that it returns an error if there is any unknown field present in JSON.
+// It also adds JSON data to any error as an error detail.
 func UnmarshalWithoutUnknownFields(data []byte, v interface{}) errors.E {
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
@@ -46,4 +47,24 @@ func MarshalWithoutEscapeHTML(v interface{}) ([]byte, errors.E) {
 		return b[:len(b)-1], nil
 	}
 	return b, nil
+}
+
+// Unmarshal is a standard JSON unmarshal, just
+// that it returns an error with a stack trace and
+// adds JSON data as an error detail.
+func Unmarshal(data []byte, v interface{}) errors.E {
+	err := json.Unmarshal(data, v)
+	if err != nil {
+		errE := errors.WithMessage(err, "json unmarshal")
+		errors.Details(errE)["json"] = string(data)
+		return errE
+	}
+	return nil
+}
+
+// MarshalWithoutEscapeHTML is a standard JSON marshal, just
+// that it returns an error with a stack trace.
+func Marshal(v interface{}) ([]byte, errors.E) {
+	b, err := json.Marshal(v)
+	return b, errors.WithMessage(err, "json marshal")
 }
