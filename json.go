@@ -17,11 +17,15 @@ func UnmarshalWithoutUnknownFields(data []byte, v interface{}) errors.E {
 	decoder.DisallowUnknownFields()
 	err := decoder.Decode(v)
 	if err != nil {
-		return errors.WithStack(err)
+		errE := errors.WithMessage(err, "json unmarshal")
+		errors.Details(errE)["json"] = string(data)
+		return errE
 	}
 	_, err = decoder.Token()
 	if err == nil || !errors.Is(err, io.EOF) {
-		return errors.WithStack(ErrJSONUnmarshalExtraData)
+		errE := errors.WithMessage(ErrJSONUnmarshalExtraData, "json unmarshal")
+		errors.Details(errE)["json"] = string(data)
+		return errE
 	}
 	return nil
 }
@@ -34,7 +38,7 @@ func MarshalWithoutEscapeHTML(v interface{}) ([]byte, errors.E) {
 	encoder.SetEscapeHTML(false)
 	err := encoder.Encode(v)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.WithMessage(err, "json marshal")
 	}
 	b := buf.Bytes()
 	if len(b) > 0 {
