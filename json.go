@@ -18,15 +18,11 @@ func UnmarshalWithoutUnknownFields(data []byte, v interface{}) errors.E {
 	decoder.DisallowUnknownFields()
 	err := decoder.Decode(v)
 	if err != nil {
-		errE := errors.WithMessage(err, "json unmarshal")
-		errors.Details(errE)["json"] = string(data)
-		return errE
+		return errors.WithDetails(err, "json", string(data))
 	}
 	_, err = decoder.Token()
 	if err == nil || !errors.Is(err, io.EOF) {
-		errE := errors.WithMessage(ErrJSONUnmarshalExtraData, "json unmarshal")
-		errors.Details(errE)["json"] = string(data)
-		return errE
+		return errors.WithDetails(ErrJSONUnmarshalExtraData, "json", string(data))
 	}
 	return nil
 }
@@ -39,7 +35,7 @@ func MarshalWithoutEscapeHTML(v interface{}) ([]byte, errors.E) {
 	encoder.SetEscapeHTML(false)
 	err := encoder.Encode(v)
 	if err != nil {
-		return nil, errors.WithMessage(err, "json marshal")
+		return nil, errors.WithStack(err)
 	}
 	b := buf.Bytes()
 	if len(b) > 0 {
@@ -55,9 +51,7 @@ func MarshalWithoutEscapeHTML(v interface{}) ([]byte, errors.E) {
 func Unmarshal(data []byte, v interface{}) errors.E {
 	err := json.Unmarshal(data, v)
 	if err != nil {
-		errE := errors.WithMessage(err, "json unmarshal")
-		errors.Details(errE)["json"] = string(data)
-		return errE
+		return errors.WithDetails(err, "json", string(data))
 	}
 	return nil
 }
@@ -66,5 +60,5 @@ func Unmarshal(data []byte, v interface{}) errors.E {
 // that it returns an error with a stack trace.
 func Marshal(v interface{}) ([]byte, errors.E) {
 	b, err := json.Marshal(v)
-	return b, errors.WithMessage(err, "json marshal")
+	return b, errors.WithStack(err)
 }
