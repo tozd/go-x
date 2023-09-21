@@ -9,7 +9,10 @@ require (
 	gitlab.com/tozd/go/errors v0.7.2
 )
 
-require github.com/hashicorp/go-retryablehttp v0.7.1-0.20211018174820-ff6d014e72d9
+require (
+	github.com/hashicorp/go-retryablehttp v0.7.1-0.20211018174820-ff6d014e72d9
+	golang.org/x/sync v0.3.0
+)
 
 require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
