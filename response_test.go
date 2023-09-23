@@ -35,7 +35,7 @@ func TestRetryableResponseSimple(t *testing.T) {
 	require.NotNil(t, req)
 
 	res, err := x.NewRetryableResponse(client, req)
-	require.NoError(t, err)
+	require.NoError(t, err, "% -+#.1v", err)
 	require.NotNil(t, res)
 	defer res.Close()
 
@@ -83,7 +83,7 @@ func TestRetryableResponseRetry(t *testing.T) {
 	require.NotNil(t, req)
 
 	res, err := x.NewRetryableResponse(client, req)
-	require.NoError(t, err)
+	require.NoError(t, err, "% -+#.1v", err)
 	require.NotNil(t, res)
 	defer res.Close()
 

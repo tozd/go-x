@@ -28,7 +28,7 @@ func TestSyncVar(t *testing.T) {
 		return nil
 	})
 	errE := v.Store(1)
-	assert.NoError(t, errE)
+	assert.NoError(t, errE, "% -+#.1v", errE)
 	err := g.Wait()
 	assert.NoError(t, err)
 	errE = v.Store(1)

@@ -18,10 +18,10 @@ func TestUnmarshalWithoutUnknownFields(t *testing.T) {
 	var v Test
 
 	err := x.UnmarshalWithoutUnknownFields([]byte(`{}`), &v)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "% -+#.1v", err)
 
 	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field": "abc"}`), &v)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "% -+#.1v", err)
 
 	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field2": "abc"}`), &v)
 	assert.Error(t, err)
@@ -37,7 +37,7 @@ func TestUnmarshalWithoutUnknownFields(t *testing.T) {
 
 	// Extra whitespace should not error.
 	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field": "abc"} `), &v)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "% -+#.1v", err)
 }
 
 func TestMarshalWithoutEscapeHTML(t *testing.T) {
@@ -48,6 +48,6 @@ func TestMarshalWithoutEscapeHTML(t *testing.T) {
 	}
 
 	data, err := x.MarshalWithoutEscapeHTML(&Test{Field: "<body></body>"})
-	assert.NoError(t, err)
+	assert.NoError(t, err, "% -+#.1v", err)
 	assert.Equal(t, `{"field":"<body></body>"}`, string(data))
 }
