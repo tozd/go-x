@@ -15,6 +15,8 @@ This is a Go package. You can add it to your project using `go get`:
 go get gitlab.com/tozd/go/x
 ```
 
+It requires Go 1.18 or newer.
+
 ## GitHub mirror
 
 There is also a [read-only GitHub mirror available](https://github.com/tozd/go-x),
