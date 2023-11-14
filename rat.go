@@ -17,6 +17,9 @@ var (
 //
 // It can be used with Rat.FloatString to convert a number to full precision
 // representation, when there are no repeating digits.
+//
+// This is similar to Rat.FloatPrec but returns also the number of repeating digits
+// following the non-repeating digits. Rat.FloatPrec is also much faster.
 func RatPrecision(rat *big.Rat) (int, int) {
 	// Go assures that rat is normalized.
 	m := new(big.Int).Set(rat.Denom())

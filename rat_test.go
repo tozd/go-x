@@ -49,6 +49,81 @@ func TestRatPrecision(t *testing.T) {
 	}
 }
 
+// Tests taken from tests for Rat.FloatPrec.
+//
+//nolint:godot
+func TestRatPrecisionMore(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		f    string
+		prec int
+		rep  int
+	}{
+		// examples from the issue #50489
+		{"10/100", 1, 0},
+		{"3/100", 2, 0},
+		{"10", 0, 0},
+
+		// more examples
+		{"zero", 0, 0}, // test uninitialized zero value for Rat
+		{"0", 0, 0},    // 0
+		{"1", 0, 0},    // 1
+		{"1/2", 1, 0},  // 0.5
+		{"1/3", 0, 1},  // 0.(3)
+		{"1/4", 2, 0},  // 0.25
+		{"1/5", 1, 0},  // 0.2
+		{"1/6", 1, 1},  // 0.1(6)
+		{"1/7", 0, 6},  // 0.(142857)
+		{"1/8", 3, 0},  // 0.125
+		{"1/9", 0, 1},  // 0.(1)
+		{"1/10", 1, 0}, // 0.1
+		{"1/11", 0, 2}, // 0.(09)
+		{"1/12", 2, 1}, // 0.08(3)
+		{"1/13", 0, 6}, // 0.(076923)
+		{"1/14", 1, 6}, // 0.0(714285)
+		{"1/15", 1, 1}, // 0.0(6)
+		{"1/16", 4, 0}, // 0.0625
+
+		{"10/2", 0, 0},        // 5
+		{"10/3", 0, 1},        // 3.(3)
+		{"10/6", 0, 1},        // 1.(6)
+		{"1/10000000", 7, 0},  // 0.0000001
+		{"1/3125", 5, 0},      // "0.00032"
+		{"1/1024", 10, 0},     // 0.0009765625
+		{"1/304000", 7, 18},   // 0.0000032(894736842105263157)
+		{"1/48828125", 11, 0}, // 0.00000002048
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.f, func(t *testing.T) {
+			t.Parallel()
+
+			var f big.Rat
+
+			// check uninitialized zero value
+			if tt.f != "zero" {
+				_, ok := f.SetString(tt.f) //nolint:gosec
+				require.True(t, ok, "invalid test case")
+			}
+
+			// results for f and -f must be the same
+			for i := 0; i < 2; i++ {
+				prec, rep := x.RatPrecision(&f)
+				assert.Equal(t, tt.prec, prec)
+				assert.Equal(t, tt.rep, rep)
+
+				// proceed with -f but don't add a "-" before a "0"
+				if f.Sign() > 0 {
+					f.Neg(&f)
+				}
+			}
+		})
+	}
+}
+
 func TestRatPrecisionString(t *testing.T) {
 	t.Parallel()
 
@@ -74,7 +149,59 @@ func TestRatPrecisionString(t *testing.T) {
 
 func BenchmarkRatPrecision(b *testing.B) {
 	r := big.NewRat(1, 67)
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		x.RatPrecision(r)
+	}
+}
+
+// Benchmark taken from tests for Rat.FloatPrec.
+//
+//nolint:godot
+func BenchmarkFloatPrecExact(b *testing.B) {
+	for _, n := range []int{1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6} {
+		// d := 5^n
+		d := big.NewInt(5)
+		p := big.NewInt(int64(n))
+		d.Exp(d, p, nil)
+
+		// r := 1/d
+		var r big.Rat
+		r.SetFrac(big.NewInt(1), d)
+
+		b.Run(fmt.Sprint(n), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				prec, rep := x.RatPrecision(&r)
+				if prec != n || rep != 0 {
+					b.Fatalf("got %d, %v; want %d, %v", prec, rep, uint64(n), 0)
+				}
+			}
+		})
+	}
+}
+
+// Benchmark taken from tests for Rat.FloatPrec.
+//
+//nolint:godot
+func BenchmarkFloatPrecInexact(b *testing.B) {
+	for _, n := range []int{1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6} {
+		// d := 5^n + 1
+		d := big.NewInt(5)
+		p := big.NewInt(int64(n))
+		d.Exp(d, p, nil)
+		d.Add(d, big.NewInt(1))
+
+		// r := 1/d
+		var r big.Rat
+		r.SetFrac(big.NewInt(1), d)
+
+		b.Run(fmt.Sprint(n), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				_, rep := x.RatPrecision(&r)
+				if rep == 0 {
+					b.Fatalf("got unexpected zero rep")
+				}
+			}
+		})
 	}
 }
