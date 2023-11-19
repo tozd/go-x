@@ -48,17 +48,20 @@ func TestInferProjectID(t *testing.T) {
 			_, err = workTree.Add("file.txt")
 			require.NoError(t, err)
 			_, err = workTree.Commit("Initial commmit.", &git.CommitOptions{
-				All:       false,
-				Author:    author,
-				Committer: nil,
-				Parents:   nil,
-				SignKey:   nil,
+				All:               false,
+				AllowEmptyCommits: false,
+				Author:            author,
+				Committer:         nil,
+				Parents:           nil,
+				SignKey:           nil,
+				Amend:             false,
 			})
 			require.NoError(t, err)
 			_, err = repository.CreateRemote(&config.RemoteConfig{
-				Name:  "origin",
-				URLs:  []string{tt.remote},
-				Fetch: nil,
+				Name:   "origin",
+				URLs:   []string{tt.remote},
+				Fetch:  nil,
+				Mirror: false,
 			})
 			require.NoError(t, err)
 			projectID, err := x.InferGitLabProjectID(tempDir)
