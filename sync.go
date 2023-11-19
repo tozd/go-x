@@ -12,7 +12,7 @@ var ErrSyncVarAlreadyStored = errors.Base("already stored")
 // to be available while one other goroutine stored the value.
 //
 // It is useful if you do not know in advance which goroutine
-// will be the one (and only one) which obtains the value while
+// will be the one (and only one) which stores the value while
 // all goroutines need the value.
 //
 // The zero value for a SyncVar is not usable. Use NewSyncVar.
