@@ -91,14 +91,14 @@ func (d *RetryableResponse) Read(p []byte) (int, error) {
 			return n, nil
 		}
 		return d.Read(p)
-	} else {
-		// Something else, just return as-is.
-		if err == io.EOF { //nolint:errorlint
-			// See: https://github.com/golang/go/issues/39155
-			return n, io.EOF
-		}
-		return n, errors.WithStack(err)
 	}
+
+	// Something else, just return as-is.
+	if err == io.EOF { //nolint:errorlint
+		// See: https://github.com/golang/go/issues/39155
+		return n, io.EOF
+	}
+	return n, errors.WithStack(err)
 }
 
 // Count implements counter interface for RetryableResponse.
