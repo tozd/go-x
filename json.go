@@ -14,17 +14,11 @@ var ErrJSONUnmarshalExtraData = errors.Base("invalid data after top-level value"
 // that it returns an error if there is any unknown field present in JSON.
 // It also adds JSON data to any error as an error detail.
 func UnmarshalWithoutUnknownFields(data []byte, v interface{}) errors.E {
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err := decoder.Decode(v)
-	if err != nil {
-		return errors.WithDetails(err, "json", string(data))
+	errE := DecodeJSONWithoutUnknownFields(bytes.NewReader(data), v)
+	if errE != nil {
+		errors.Details(errE)["json"] = string(data)
 	}
-	_, err = decoder.Token()
-	if err == nil || !errors.Is(err, io.EOF) {
-		return errors.WithDetails(ErrJSONUnmarshalExtraData, "json", string(data))
-	}
-	return nil
+	return errE
 }
 
 // MarshalWithoutEscapeHTML is a standard JSON marshal, just that
@@ -61,4 +55,36 @@ func Unmarshal(data []byte, v interface{}) errors.E {
 func Marshal(v interface{}) ([]byte, errors.E) {
 	b, err := json.Marshal(v)
 	return b, errors.WithStack(err)
+}
+
+// DecodeJSON reads one JSON object from reader and unmarshals it into v.
+// It errors if there is more data trailing after the object.
+func DecodeJSON(reader io.Reader, v interface{}) errors.E {
+	decoder := json.NewDecoder(reader)
+	err := decoder.Decode(v)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	_, err = decoder.Token()
+	if !errors.Is(err, io.EOF) {
+		return errors.WithStack(ErrJSONUnmarshalExtraData)
+	}
+	return nil
+}
+
+// DecodeJSON reads one JSON object from reader and unmarshals it into v.
+// It errors if there is more data trailing after the object.
+// It returns an error if there is any unknown field present in JSON.
+func DecodeJSONWithoutUnknownFields(reader io.Reader, v interface{}) errors.E {
+	decoder := json.NewDecoder(reader)
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(v)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	_, err = decoder.Token()
+	if !errors.Is(err, io.EOF) {
+		return errors.WithStack(ErrJSONUnmarshalExtraData)
+	}
+	return nil
 }
