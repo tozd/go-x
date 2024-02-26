@@ -50,7 +50,7 @@ func Unmarshal(data []byte, v interface{}) errors.E {
 	return nil
 }
 
-// MarshalWithoutEscapeHTML is a standard JSON marshal, just
+// Marshal is a standard JSON marshal, just
 // that it returns an error with a stack trace.
 func Marshal(v interface{}) ([]byte, errors.E) {
 	b, err := json.Marshal(v)
@@ -72,7 +72,8 @@ func DecodeJSON(reader io.Reader, v interface{}) errors.E {
 	return nil
 }
 
-// DecodeJSON reads one JSON object from reader and unmarshals it into v.
+// DecodeJSONWithoutUnknownFields reads one JSON object from reader and
+// unmarshals it into v.
 // It errors if there is more data trailing after the object.
 // It returns an error if there is any unknown field present in JSON.
 func DecodeJSONWithoutUnknownFields(reader io.Reader, v interface{}) errors.E {
