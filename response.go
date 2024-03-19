@@ -57,7 +57,7 @@ func (d *RetryableResponse) Read(p []byte) (int, error) {
 	size := d.Size()
 	if count == size {
 		// We read everything, just return as-is.
-		if err == io.EOF { //nolint:errorlint
+		if err == io.EOF {
 			// See: https://github.com/golang/go/issues/39155
 			return n, io.EOF
 		}
@@ -94,7 +94,7 @@ func (d *RetryableResponse) Read(p []byte) (int, error) {
 	}
 
 	// Something else, just return as-is.
-	if err == io.EOF { //nolint:errorlint
+	if err == io.EOF {
 		// See: https://github.com/golang/go/issues/39155
 		return n, io.EOF
 	}

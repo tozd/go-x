@@ -22,7 +22,7 @@ const responseBody = "Hello, client\n"
 func TestRetryableResponseSimple(t *testing.T) {
 	t.Parallel()
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, responseBody)
 	}))
 	defer ts.Close()
