@@ -2,6 +2,8 @@ module gitlab.com/tozd/go/x
 
 go 1.23
 
+toolchain go1.23.1
+
 require (
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/stretchr/testify v1.8.4
