@@ -3,6 +3,7 @@ package x_test
 import (
 	"fmt"
 	"math/big"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -38,7 +39,6 @@ func TestRatPrecision(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(fmt.Sprintf("%d/%d", test.n, test.m), func(t *testing.T) {
 			t.Parallel()
 
@@ -96,8 +96,6 @@ func TestRatPrecisionMore(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.f, func(t *testing.T) {
 			t.Parallel()
 
@@ -110,7 +108,7 @@ func TestRatPrecisionMore(t *testing.T) {
 			}
 
 			// results for f and -f must be the same
-			for i := 0; i < 2; i++ {
+			for range 2 {
 				prec, rep := x.RatPrecision(&f)
 				assert.Equal(t, tt.prec, prec)
 				assert.Equal(t, tt.rep, rep)
@@ -134,7 +132,6 @@ func TestRatPrecisionString(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test, func(t *testing.T) {
 			t.Parallel()
 
@@ -169,8 +166,8 @@ func BenchmarkFloatPrecExact(b *testing.B) {
 		var r big.Rat
 		r.SetFrac(big.NewInt(1), d)
 
-		b.Run(fmt.Sprint(n), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+		b.Run(strconv.Itoa(n), func(b *testing.B) {
+			for range b.N {
 				prec, rep := x.RatPrecision(&r)
 				if prec != n || rep != 0 {
 					b.Fatalf("got %d, %v; want %d, %v", prec, rep, uint64(n), 0)
@@ -195,7 +192,7 @@ func BenchmarkFloatPrecInexact(b *testing.B) {
 		var r big.Rat
 		r.SetFrac(big.NewInt(1), d)
 
-		b.Run(fmt.Sprint(n), func(b *testing.B) {
+		b.Run(strconv.Itoa(n), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				_, rep := x.RatPrecision(&r)
 				if rep == 0 {

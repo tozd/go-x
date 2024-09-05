@@ -27,7 +27,7 @@ func CreateTempCertificateFiles(certPath, keyPath string, domains []string) erro
 		SerialNumber:          big.NewInt(1),
 		Subject:               pkix.Name{Organization: []string{"Test"}}, //nolint:exhaustruct
 		NotBefore:             time.Now().UTC(),
-		NotAfter:              time.Now().UTC().Add(24 * time.Hour), //nolint:gomnd
+		NotAfter:              time.Now().UTC().Add(24 * time.Hour), //nolint:mnd
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,

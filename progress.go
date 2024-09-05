@@ -77,7 +77,7 @@ type Progress struct {
 }
 
 func (p Progress) Percent() float64 {
-	return float64(p.Count) / float64(p.Size) * 100.0 //nolint:gomnd
+	return float64(p.Count) / float64(p.Size) * 100.0 //nolint:mnd
 }
 
 func (p Progress) Remaining() time.Duration {

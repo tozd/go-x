@@ -62,11 +62,11 @@ func TestTicker(t *testing.T) {
 
 	assert.Equal(t, int64(10), p.Size)
 	assert.Equal(t, int64(0), p.Count)
-	assert.Equal(t, 0.0, p.Percent())
+	assert.Equal(t, 0.0, p.Percent()) //nolint:testifylint
 
 	n, err := w.Write([]byte("abcd"))
 	assert.Equal(t, 4, n)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	time.Sleep(2 * tickerInterval)
 
@@ -79,7 +79,7 @@ func TestTicker(t *testing.T) {
 
 	assert.Equal(t, int64(10), p.Size)
 	assert.Equal(t, int64(4), p.Count)
-	assert.Equal(t, 40.0, p.Percent())
+	assert.Equal(t, 40.0, p.Percent()) //nolint:testifylint
 
 	cancel()
 
@@ -99,7 +99,7 @@ func TestTicker(t *testing.T) {
 	func() {
 		l.Lock()
 		defer l.Unlock()
-		assert.Equal(t, progressLen, len(progress))
+		assert.Len(t, progress, progressLen)
 	}()
 
 	// Channel should be closed.

@@ -1,6 +1,6 @@
 module gitlab.com/tozd/go/x
 
-go 1.21
+go 1.23
 
 require (
 	github.com/go-git/go-git/v5 v5.11.0

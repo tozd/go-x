@@ -7,9 +7,9 @@ import (
 var (
 	zeroInt = big.NewInt(0)  //nolint:gochecknoglobals
 	oneInt  = big.NewInt(1)  //nolint:gochecknoglobals
-	twoInt  = big.NewInt(2)  //nolint:gomnd,gochecknoglobals
-	fiveInt = big.NewInt(5)  //nolint:gomnd,gochecknoglobals
-	tenInt  = big.NewInt(10) //nolint:gomnd,gochecknoglobals
+	twoInt  = big.NewInt(2)  //nolint:mnd,gochecknoglobals
+	fiveInt = big.NewInt(5)  //nolint:mnd,gochecknoglobals
+	tenInt  = big.NewInt(10) //nolint:mnd,gochecknoglobals
 )
 
 // RatPrecision computes for rat the number of non-repeating digits on the right

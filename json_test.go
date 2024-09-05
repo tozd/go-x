@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"gitlab.com/tozd/go/x"
 )
@@ -18,22 +19,22 @@ func TestUnmarshalWithoutUnknownFields(t *testing.T) {
 	var v Test
 
 	err := x.UnmarshalWithoutUnknownFields([]byte(`{}`), &v)
-	assert.NoError(t, err, "% -+#.1v", err)
+	assert.NoError(t, err, "% -+#.1v", err) //nolint:testifylint
 
 	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field": "abc"}`), &v)
-	assert.NoError(t, err, "% -+#.1v", err)
+	assert.NoError(t, err, "% -+#.1v", err) //nolint:testifylint
 
 	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field2": "abc"}`), &v)
-	assert.Error(t, err)
+	assert.Error(t, err) //nolint:testifylint
 
 	// Extra payload should error.
 	// See: https://github.com/golang/go/issues/36225
 	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field": "abc"} xxx`), &v)
-	assert.Error(t, err)
+	assert.Error(t, err) //nolint:testifylint
 	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field": "abc"} ]`), &v)
-	assert.Error(t, err)
+	assert.Error(t, err) //nolint:testifylint
 	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field": "abc"} {`), &v)
-	assert.Error(t, err)
+	assert.Error(t, err) //nolint:testifylint
 
 	// Extra whitespace should not error.
 	err = x.UnmarshalWithoutUnknownFields([]byte(`{"field": "abc"} `), &v)
@@ -48,6 +49,6 @@ func TestMarshalWithoutEscapeHTML(t *testing.T) {
 	}
 
 	data, err := x.MarshalWithoutEscapeHTML(&Test{Field: "<body></body>"})
-	assert.NoError(t, err, "% -+#.1v", err)
+	require.NoError(t, err, "% -+#.1v", err)
 	assert.Equal(t, `{"field":"<body></body>"}`, string(data))
 }
