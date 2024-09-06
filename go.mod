@@ -7,11 +7,11 @@ toolchain go1.23.1
 require (
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/stretchr/testify v1.9.0
-	github.com/whilp/git-urls v1.0.0
 	gitlab.com/tozd/go/errors v0.8.1
 )
 
 require (
+	github.com/chainguard-dev/git-urls v1.0.2
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	golang.org/x/sync v0.8.0
 )
