@@ -53,6 +53,7 @@ func TestInferProjectID(t *testing.T) {
 				Committer:         nil,
 				Parents:           nil,
 				SignKey:           nil,
+				Signer:            nil,
 				Amend:             false,
 			})
 			require.NoError(t, err)
