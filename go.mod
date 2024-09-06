@@ -7,7 +7,7 @@ toolchain go1.23.1
 require (
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/stretchr/testify v1.9.0
-	gitlab.com/tozd/go/errors v0.8.1
+	gitlab.com/tozd/go/errors v0.9.0
 )
 
 require (
