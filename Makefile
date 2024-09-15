@@ -1,6 +1,6 @@
 SHELL = /bin/bash -o pipefail
 
-.PHONY: test test-ci lint lint-ci fmt fmt-ci upgrade clean lint-docs audit encrypt decrypt sops
+.PHONY: test test-ci lint lint-ci fmt fmt-ci upgrade clean lint-docs lint-docs-ci audit encrypt decrypt sops
 
 test:
 	gotestsum --format pkgname --packages ./... -- -race -timeout 10m -cover -covermode atomic
@@ -32,7 +32,10 @@ clean:
 	rm -f coverage.* codeclimate.json tests.xml
 
 lint-docs:
-	npx --yes --package 'markdownlint-cli@~0.34.0' -- markdownlint --ignore-path .gitignore --ignore testdata/ '**/*.md'
+	npx --yes --package 'markdownlint-cli@~0.41.0' -- markdownlint --ignore-path .gitignore --ignore testdata/ --fix '**/*.md'
+
+lint-docs-ci: lint-docs
+	git diff --exit-code --color=always
 
 audit:
 	go list -json -deps ./... | nancy sleuth --skip-update-check
