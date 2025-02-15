@@ -147,7 +147,7 @@ func TestRatPrecisionString(t *testing.T) {
 func BenchmarkRatPrecision(b *testing.B) {
 	r := big.NewRat(1, 67)
 	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		x.RatPrecision(r)
 	}
 }
@@ -170,7 +170,7 @@ func BenchmarkFloatPrecExact(b *testing.B) {
 			for range b.N {
 				prec, rep := x.RatPrecision(&r)
 				if prec != n || rep != 0 {
-					b.Fatalf("got %d, %v; want %d, %v", prec, rep, uint64(n), 0)
+					b.Fatalf("got %d, %v; want %d, %v", prec, rep, n, 0)
 				}
 			}
 		})
@@ -193,7 +193,7 @@ func BenchmarkFloatPrecInexact(b *testing.B) {
 		r.SetFrac(big.NewInt(1), d)
 
 		b.Run(strconv.Itoa(n), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				_, rep := x.RatPrecision(&r)
 				if rep == 0 {
 					b.Fatalf("got unexpected zero rep")

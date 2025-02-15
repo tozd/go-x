@@ -50,5 +50,5 @@ func TestMarshalWithoutEscapeHTML(t *testing.T) {
 
 	data, err := x.MarshalWithoutEscapeHTML(&Test{Field: "<body></body>"})
 	require.NoError(t, err, "% -+#.1v", err)
-	assert.Equal(t, `{"field":"<body></body>"}`, string(data))
+	assert.Equal(t, `{"field":"<body></body>"}`, string(data)) //nolint:testifylint
 }
