@@ -27,6 +27,11 @@ func (c *Counter) Count() int64 {
 	return atomic.LoadInt64((*int64)(c))
 }
 
+// NewCounter returns a new Counter which holds the value c.
+func NewCounter(c int64) *Counter {
+	return (*Counter)(&c)
+}
+
 // CountingReader is an io.Reader proxy which counts the number of bytes
 // it read and passed on.
 type CountingReader struct {
@@ -100,7 +105,7 @@ func (t *Ticker) Stop() {
 
 // NewTicker creates a new Ticker which at regular interval reports the
 // progress as reported by the counter c.
-func NewTicker(ctx context.Context, c counter, size int64, interval time.Duration) *Ticker {
+func NewTicker(ctx context.Context, count, size counter, interval time.Duration) *Ticker {
 	ctx, cancel := context.WithCancel(ctx)
 	started := time.Now()
 	output := make(chan Progress)
@@ -114,14 +119,15 @@ func NewTicker(ctx context.Context, c counter, size int64, interval time.Duratio
 			case <-ctx.Done():
 				return
 			case now := <-ticker.C:
-				count := c.Count()
+				c := count.Count()
+				s := size.Count()
 				elapsed := now.Sub(started)
-				ratio := float64(count) / float64(size)
+				ratio := float64(c) / float64(s)
 				total := time.Duration(float64(elapsed) / ratio)
 				estimated := started.Add(total)
 				progress := Progress{
-					Count:     count,
-					Size:      size,
+					Count:     c,
+					Size:      s,
 					Started:   started,
 					Current:   now,
 					Elapsed:   elapsed,

@@ -33,7 +33,7 @@ func TestTicker(t *testing.T) {
 		_, _ = io.ReadAll(countingReader)
 	}()
 
-	ticker := x.NewTicker(ctx, countingReader, 10, tickerInterval)
+	ticker := x.NewTicker(ctx, countingReader, x.NewCounter(10), tickerInterval)
 	require.NotNil(t, ticker)
 	defer ticker.Stop()
 
