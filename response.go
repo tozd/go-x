@@ -159,11 +159,32 @@ func (d *RetryableResponse) start() errors.E {
 		}
 	}
 	if length == -1 {
+		// Try to extract length from Content-Range header if it exists.
+		// This should not really be provided for 200 responses, but it is provided by some servers,
+		// while Content-Length is not (e.g., with Transfer-Encoding: chunked).
+		unit, r, found := strings.Cut(resp.Header.Get("Content-Range"), " ")
+		unit = strings.TrimSpace(unit)
+		r = strings.TrimSpace(r)
+		if found && unit == "bytes" {
+			r, _, found = strings.Cut(r, "/")
+			if found && r != "*" {
+				start, end, found := strings.Cut(r, "-")
+				if found {
+					s, err1 := strconv.ParseInt(start, 10, 64)
+					e, err2 := strconv.ParseInt(end, 10, 64)
+					if err1 == nil && err2 == nil {
+						length = e - s + 1
+					}
+				}
+			}
+		}
+	}
+	if length == -1 {
 		return errors.WithStack(ErrResponseMissingContentLength)
 	}
 
-	size := d.Size()
 	if count > 0 {
+		size := d.Size()
 		if count+length != size {
 			return errors.WithDetails(
 				ErrResponseLengthMismatch,
