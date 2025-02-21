@@ -123,7 +123,7 @@ func (d *RetryableResponse) Close() error {
 	d.lock.Unlock()
 
 	if resp != nil {
-		io.Copy(io.Discard, resp.Body)
+		_ = io.Copy(io.Discard, resp.Body)
 		return errors.WithStack(resp.Body.Close())
 	}
 
