@@ -10,7 +10,7 @@ import (
 var ErrSyncVarAlreadyStored = errors.Base("already stored")
 
 // SyncVar allows multiple goroutines to wait for a value
-// to be available while one other goroutine stored the value.
+// to be available while one other goroutine stores the value.
 //
 // It is useful if you do not know in advance which goroutine
 // will be the one (and only one) which stores the value while

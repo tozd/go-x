@@ -104,7 +104,13 @@ func (t *Ticker) Stop() {
 }
 
 // NewTicker creates a new Ticker which at regular interval reports the
-// progress as reported by the counter c.
+// progress as reported by counters count and size.
+//
+// counter interface is defined as:
+//
+//	type counter interface {
+//		Count() int64
+//	}
 func NewTicker(ctx context.Context, count, size counter, interval time.Duration) *Ticker {
 	ctx, cancel := context.WithCancel(ctx)
 	started := time.Now()
