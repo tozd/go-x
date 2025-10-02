@@ -17,7 +17,7 @@ func (c *Counter) Increment() {
 	atomic.AddInt64((*int64)(c), 1)
 }
 
-// Increment increases counter by n.
+// Add increases counter by n.
 func (c *Counter) Add(n int64) {
 	atomic.AddInt64((*int64)(c), n)
 }
@@ -81,18 +81,22 @@ type Progress struct {
 	estimated time.Time
 }
 
+// Percent returns the percentage of the progress.
 func (p Progress) Percent() float64 {
 	return float64(p.Count) / float64(p.Size) * 100.0 //nolint:mnd
 }
 
+// Remaining returns the remaining time to completion.
 func (p Progress) Remaining() time.Duration {
 	return p.remaining
 }
 
+// Estimated returns the estimated time of completion.
 func (p Progress) Estimated() time.Time {
 	return p.estimated
 }
 
+// Ticker at regular interval reports the progress.
 type Ticker struct {
 	C    <-chan Progress
 	stop func()

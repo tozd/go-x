@@ -24,8 +24,8 @@ func TestTicker(t *testing.T) {
 	defer cancel()
 
 	r, w := io.Pipe()
-	defer r.Close()
-	defer w.Close()
+	defer r.Close() //nolint:errcheck
+	defer w.Close() //nolint:errcheck
 
 	countingReader := x.NewCountingReader(r)
 

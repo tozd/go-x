@@ -30,12 +30,13 @@ var (
 // It embeds the current response (so you can access response headers, etc.)
 // but the current response can change when the request is retried.
 type RetryableResponse struct {
+	*http.Response
+
 	client *retryablehttp.Client
 	req    *retryablehttp.Request
 	count  int64
 	size   int64
 	lock   sync.Mutex
-	*http.Response
 }
 
 // Read implements io.Reader for RetryableResponse.
@@ -74,7 +75,7 @@ func (d *RetryableResponse) Read(p []byte) (int, error) {
 			"count", count,
 			"size", size,
 		)
-	} else if contextErr := d.req.Context().Err(); contextErr != nil {
+	} else if contextErr := d.req.Context().Err(); contextErr != nil { //nolint:noinlineerr
 		// Do not retry on context.Canceled or context.DeadlineExceeded.
 		if contextErr == io.EOF { //nolint:errorlint
 			// See: https://github.com/golang/go/issues/39155
@@ -131,7 +132,10 @@ func (d *RetryableResponse) Close() error {
 }
 
 func (d *RetryableResponse) start() errors.E {
-	d.Close()
+	err := d.Close()
+	if err != nil {
+		return errors.WithStack(err)
+	}
 
 	count := d.Count()
 	if count > 0 {

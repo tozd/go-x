@@ -103,7 +103,7 @@ func TestRatPrecisionMore(t *testing.T) {
 
 			// check uninitialized zero value
 			if tt.f != "zero" {
-				_, ok := f.SetString(tt.f) //nolint:gosec
+				_, ok := f.SetString(tt.f)
 				require.True(t, ok, "invalid test case")
 			}
 
@@ -135,7 +135,7 @@ func TestRatPrecisionString(t *testing.T) {
 		t.Run(test, func(t *testing.T) {
 			t.Parallel()
 
-			n, ok := new(big.Rat).SetString(test) //nolint:gosec
+			n, ok := new(big.Rat).SetString(test)
 			require.True(t, ok)
 			l, q := x.RatPrecision(n)
 			assert.Equal(t, 0, q)

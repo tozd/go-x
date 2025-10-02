@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"math/big"
 	"os"
+	"path/filepath"
 	"time"
 
 	"gitlab.com/tozd/go/errors"
@@ -40,22 +41,22 @@ func CreateTempCertificateFiles(certPath, keyPath string, domains []string) erro
 	}
 
 	// Write the certificate to a file.
-	certFile, err := os.Create(certPath)
+	certFile, err := os.Create(filepath.Clean(certPath))
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	defer certFile.Close()
+	defer certFile.Close()                                                      //nolint:errcheck
 	err = pem.Encode(certFile, &pem.Block{Type: "CERTIFICATE", Bytes: certDER}) //nolint:exhaustruct
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	// Write the private key to a file.
-	keyFile, err := os.Create(keyPath)
+	keyFile, err := os.Create(filepath.Clean(keyPath))
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	defer keyFile.Close()
+	defer keyFile.Close() //nolint:errcheck
 	privBytes, err := x509.MarshalECPrivateKey(priv)
 	if err != nil {
 		return errors.WithStack(err)

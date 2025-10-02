@@ -23,7 +23,7 @@ func TestRetryableResponseSimple(t *testing.T) {
 	t.Parallel()
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		fmt.Fprint(w, responseBody)
+		fmt.Fprint(w, responseBody) //nolint:errcheck
 	}))
 	defer ts.Close()
 
@@ -37,7 +37,7 @@ func TestRetryableResponseSimple(t *testing.T) {
 	res, errE := x.NewRetryableResponse(client, req)
 	require.NoError(t, errE, "% -+#.1v", err)
 	require.NotNil(t, res)
-	defer res.Close()
+	defer res.Close() //nolint:errcheck
 
 	assert.Equal(t, int64(14), res.ContentLength)
 	assert.Equal(t, int64(14), res.Size())
@@ -58,7 +58,7 @@ func TestRetryableResponseRetry(t *testing.T) {
 				rs := strings.Split(reqRange, "-")
 				if assert.Len(t, rs, 2) {
 					end := rs[1]
-					assert.Equal(t, "", end)
+					assert.Empty(t, end)
 					start, err := strconv.Atoi(rs[0])
 					if assert.NoError(t, err) {
 						assert.Equal(t, 6, start)
@@ -66,7 +66,7 @@ func TestRetryableResponseRetry(t *testing.T) {
 						w.Header().Set("Content-Length", strconv.Itoa(len(rest)))
 						w.WriteHeader(http.StatusPartialContent)
 						// Send the rest.
-						fmt.Fprint(w, rest)
+						fmt.Fprint(w, rest) //nolint:errcheck
 					}
 				}
 			}
@@ -74,7 +74,7 @@ func TestRetryableResponseRetry(t *testing.T) {
 			w.Header().Set("Content-Length", strconv.Itoa(len(responseBody)))
 			w.WriteHeader(http.StatusOK)
 			// Send only the first 6 bytes.
-			fmt.Fprint(w, responseBody[0:6])
+			fmt.Fprint(w, responseBody[0:6]) //nolint:errcheck
 		}
 	}))
 	defer ts.Close()
@@ -89,7 +89,7 @@ func TestRetryableResponseRetry(t *testing.T) {
 	res, errE := x.NewRetryableResponse(client, req)
 	require.NoError(t, err, "% -+#.1v", errE)
 	require.NotNil(t, res)
-	defer res.Close()
+	defer res.Close() //nolint:errcheck
 
 	assert.Equal(t, int64(14), res.ContentLength)
 	assert.Equal(t, int64(14), res.Size())
@@ -110,7 +110,7 @@ func TestRetryableResponseRetryWithContentRange(t *testing.T) {
 				rs := strings.Split(reqRange, "-")
 				if assert.Len(t, rs, 2) {
 					end := rs[1]
-					assert.Equal(t, "", end)
+					assert.Empty(t, end)
 					start, err := strconv.Atoi(rs[0])
 					if assert.NoError(t, err) {
 						assert.Equal(t, 6, start)
@@ -118,7 +118,7 @@ func TestRetryableResponseRetryWithContentRange(t *testing.T) {
 						w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, len(responseBody)-1, len(responseBody)))
 						w.WriteHeader(http.StatusPartialContent)
 						// Send the rest.
-						fmt.Fprint(w, rest)
+						fmt.Fprint(w, rest) //nolint:errcheck
 						if f, ok := w.(http.Flusher); ok {
 							// Forcing flush to not have Content-Length header set by Go.
 							f.Flush()
@@ -130,7 +130,7 @@ func TestRetryableResponseRetryWithContentRange(t *testing.T) {
 			w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", 0, len(responseBody)-1, len(responseBody)))
 			w.WriteHeader(http.StatusOK)
 			// Send only the first 6 bytes.
-			fmt.Fprint(w, responseBody[0:6])
+			fmt.Fprint(w, responseBody[0:6]) //nolint:errcheck
 			if f, ok := w.(http.Flusher); ok {
 				// Forcing flush to not have Content-Length header set by Go.
 				f.Flush()
@@ -149,7 +149,7 @@ func TestRetryableResponseRetryWithContentRange(t *testing.T) {
 	res, errE := x.NewRetryableResponse(client, req)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	require.NotNil(t, res)
-	defer res.Close()
+	defer res.Close() //nolint:errcheck
 
 	assert.Equal(t, int64(-1), res.ContentLength)
 	assert.Equal(t, int64(14), res.Size())
