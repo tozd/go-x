@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"time"
 
 	"gitlab.com/tozd/go/errors"
 )
@@ -87,5 +88,51 @@ func DecodeJSONWithoutUnknownFields(reader io.Reader, v interface{}) errors.E {
 	if !errors.Is(err, io.EOF) {
 		return errors.WithStack(ErrJSONUnmarshalExtraData)
 	}
+	return nil
+}
+
+// Same as gitlab.com/tozd/go/zerolog.TimeFieldFormat.
+const timeFieldFormat = "2006-01-02T15:04:05.000Z07:00"
+
+// Time is the same as [time.Time], only that it marshals to JSON with millisecond
+// precision to minimize any side channels.
+type Time time.Time
+
+// MarshalJSON implements [json.Marshaler] interface for Time.
+func (t Time) MarshalJSON() ([]byte, error) {
+	return MarshalWithoutEscapeHTML(time.Time(t).Format(timeFieldFormat))
+}
+
+// UnmarshalJSON implements [json.Marshaler] interface for Time.
+func (t *Time) UnmarshalJSON(data []byte) error {
+	var tt time.Time
+	errE := UnmarshalWithoutUnknownFields(data, &tt)
+	if errE != nil {
+		return errE
+	}
+	*t = Time(tt)
+	return nil
+}
+
+// Duration is the same as [time.Duration], only that it marshals to JSON as string.
+type Duration time.Duration
+
+// MarshalJSON implements [json.Marshaler] interface for Duration.
+func (d Duration) MarshalJSON() ([]byte, error) {
+	return MarshalWithoutEscapeHTML(time.Duration(d).String())
+}
+
+// UnmarshalJSON implements [json.Marshaler] interface for Duration.
+func (d *Duration) UnmarshalJSON(b []byte) error {
+	var s string
+	errE := UnmarshalWithoutUnknownFields(b, &s)
+	if errE != nil {
+		return errE
+	}
+	tmp, err := time.ParseDuration(s)
+	if err != nil {
+		return errors.WithDetails(err, "duration", s)
+	}
+	*d = Duration(tmp)
 	return nil
 }
