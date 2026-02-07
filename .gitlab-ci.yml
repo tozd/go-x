@@ -37,7 +37,7 @@ test:
 
   parallel:
     matrix:
-      - IMAGE_TAG: ['1.24-alpine3.22', '1.25-alpine3.22']
+      - IMAGE_TAG: ["1.25-alpine3.22"]
 
 lint:
   stage: test
