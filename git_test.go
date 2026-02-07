@@ -64,8 +64,8 @@ func TestInferProjectID(t *testing.T) {
 				Mirror: false,
 			})
 			require.NoError(t, err)
-			projectID, err := x.InferGitLabProjectID(tempDir)
-			require.NoError(t, err, "% -+#.1v", err)
+			projectID, errE := x.InferGitLabProjectID(tempDir)
+			require.NoError(t, errE, "% -+#.1v", errE)
 			assert.Equal(t, tt.projectID, projectID)
 		})
 	}
