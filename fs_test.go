@@ -450,6 +450,7 @@ func TestFilteredFS_Sub(t *testing.T) {
 	})
 }
 
+//nolint:dupl
 func TestFilteredFS_PathPrefixMatching(t *testing.T) {
 	t.Parallel()
 
@@ -563,6 +564,7 @@ func TestFilteredFS_MultipleExclusions(t *testing.T) {
 	})
 }
 
+//nolint:dupl
 func TestFilteredFS_NestedExclusions(t *testing.T) {
 	t.Parallel()
 
