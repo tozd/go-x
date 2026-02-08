@@ -1,6 +1,7 @@
 package x
 
 import (
+	"io"
 	"io/fs"
 	"path"
 	"strings"
@@ -104,13 +105,69 @@ func MakeFilteredFS(fsys fs.FS, exclude ...string) (fs.FS, errors.E) {
 	}, nil
 }
 
+// filteredFile wraps an fs.File and filters ReadDir results.
+type filteredFile struct {
+	fs.File
+
+	FilteredFS *FilteredFS
+	Name       string
+}
+
+// ReadDir implements fs.ReadDirFile.
+func (f *filteredFile) ReadDir(n int) ([]fs.DirEntry, error) {
+	// Get the underlying ReadDirFile interface.
+	dirFile, ok := f.File.(fs.ReadDirFile)
+	if !ok {
+		return nil, errors.WithStack(&fs.PathError{Op: "readdir", Path: f.Name, Err: fs.ErrInvalid})
+	}
+
+	// Read entries from underlying file.
+	entries, err := dirFile.ReadDir(n)
+
+	// Filter out excluded paths even in the case of an error.
+	filtered := make([]fs.DirEntry, 0, len(entries))
+	for _, entry := range entries {
+		var entryPath string
+		if f.Name == "." {
+			entryPath = entry.Name()
+		} else {
+			entryPath = path.Join(f.Name, entry.Name())
+		}
+		if !f.FilteredFS.isExcluded(entryPath) {
+			filtered = append(filtered, entry)
+		}
+	}
+
+	if err == io.EOF { //nolint:errorlint
+		// return io.EOF without wrapping it.
+		return filtered, err //nolint:wrapcheck
+	}
+	return filtered, errors.WithStack(err)
+}
+
 // Open implements fs.FS.
 func (f *FilteredFS) Open(name string) (fs.File, error) {
 	if f.isExcluded(name) {
 		return nil, errors.WithStack(&fs.PathError{Op: "open", Path: name, Err: fs.ErrNotExist})
 	}
 	file, err := f.fs.Open(name)
-	return file, errors.WithStack(err)
+	if err == io.EOF { //nolint:errorlint
+		// return io.EOF without wrapping it.
+		return nil, err //nolint:wrapcheck
+	} else if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// Check if this is a directory file that needs filtering.
+	if _, ok := file.(fs.ReadDirFile); ok {
+		return &filteredFile{
+			File:       file,
+			FilteredFS: f,
+			Name:       name,
+		}, nil
+	}
+
+	return file, nil
 }
 
 // ReadDir implements fs.ReadDirFS.
@@ -120,7 +177,10 @@ func (f *FilteredFS) ReadDir(name string) ([]fs.DirEntry, error) {
 	}
 
 	entries, err := fs.ReadDir(f.fs, name)
-	if err != nil {
+	if err == io.EOF { //nolint:errorlint
+		// return io.EOF without wrapping it.
+		return nil, err //nolint:wrapcheck
+	} else if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
