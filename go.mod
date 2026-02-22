@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/chainguard-dev/git-urls v1.0.2
-	github.com/go-git/go-git/v5 v5.16.3
+	github.com/go-git/go-git/v5 v5.16.5
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/stretchr/testify v1.11.1
 	gitlab.com/tozd/go/errors v0.10.0
