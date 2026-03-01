@@ -14,11 +14,11 @@ import (
 )
 
 var (
-	ErrResponseClosed               = errors.Base("response already closed")
-	ErrResponseReadBeyondEnd        = errors.Base("read beyond the expected end of the response body")
-	ErrResponseBadStatus            = errors.Base("bad response status")
-	ErrResponseMissingContentLength = errors.Base("missing Content-Length header in response")
-	ErrResponseLengthMismatch       = errors.Base("content after retry has different length than before")
+	ErrResponseClosed         = errors.Base("response already closed")
+	ErrResponseReadBeyondEnd  = errors.Base("read beyond the expected end of the response body")
+	ErrResponseBadStatus      = errors.Base("bad response status")
+	ErrResponseMissingSize    = errors.Base("missing response size")
+	ErrResponseLengthMismatch = errors.Base("content after retry has different length than before")
 )
 
 // RetryableResponse reads the response body until it is completely read.
@@ -155,37 +155,9 @@ func (d *RetryableResponse) start() errors.E {
 			"body", strings.TrimSpace(string(body)),
 		)
 	}
-	length := resp.ContentLength
-	if length == -1 {
-		// Check GCP header. GCP omits Content-Length header when response is Content-Encoding compressed.
-		l, err := strconv.ParseInt(resp.Header.Get("X-Goog-Stored-Content-Length"), 10, 64)
-		if err == nil {
-			length = l
-		}
-	}
-	if length == -1 {
-		// Try to extract length from Content-Range header if it exists.
-		// This should not really be provided for 200 responses, but it is provided by some servers,
-		// while Content-Length is not (e.g., with Transfer-Encoding: chunked).
-		unit, r, found := strings.Cut(resp.Header.Get("Content-Range"), " ")
-		unit = strings.TrimSpace(unit)
-		r = strings.TrimSpace(r)
-		if found && unit == "bytes" {
-			r, _, found = strings.Cut(r, "/")
-			if found && r != "*" {
-				start, end, found := strings.Cut(r, "-")
-				if found {
-					s, err1 := strconv.ParseInt(start, 10, 64)
-					e, err2 := strconv.ParseInt(end, 10, 64)
-					if err1 == nil && err2 == nil {
-						length = e - s + 1
-					}
-				}
-			}
-		}
-	}
-	if length == -1 {
-		return errors.WithStack(ErrResponseMissingContentLength)
+	length, errE := ResponseSize(resp)
+	if errE != nil {
+		return errE
 	}
 
 	if count > 0 {
@@ -233,4 +205,44 @@ func RetryableClient(client *http.Client) *retryablehttp.Client {
 		return nil
 	}
 	return transprot.Client
+}
+
+// ResponseSize returns the expected size of the response body.
+func ResponseSize(resp *http.Response) (int64, errors.E) {
+	length := resp.ContentLength
+	if length == -1 {
+		// Check GCP header. GCP omits Content-Length header when response is Content-Encoding compressed.
+		l, err := strconv.ParseInt(resp.Header.Get("X-Goog-Stored-Content-Length"), 10, 64)
+		if err == nil {
+			length = l
+		}
+	}
+
+	if length == -1 {
+		// Try to extract length from Content-Range header if it exists.
+		// This should not really be provided for 200 responses, but it is provided by some servers,
+		// while Content-Length is not (e.g., with Transfer-Encoding: chunked).
+		unit, r, found := strings.Cut(resp.Header.Get("Content-Range"), " ")
+		unit = strings.TrimSpace(unit)
+		r = strings.TrimSpace(r)
+		if found && unit == "bytes" {
+			r, _, found = strings.Cut(r, "/")
+			if found && r != "*" {
+				start, end, found := strings.Cut(r, "-")
+				if found {
+					s, err1 := strconv.ParseInt(start, 10, 64)
+					e, err2 := strconv.ParseInt(end, 10, 64)
+					if err1 == nil && err2 == nil {
+						length = e - s + 1
+					}
+				}
+			}
+		}
+	}
+
+	if length == -1 {
+		return 0, errors.WithStack(ErrResponseMissingSize)
+	}
+
+	return length, nil
 }
