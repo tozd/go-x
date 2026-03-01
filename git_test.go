@@ -16,6 +16,31 @@ import (
 	"gitlab.com/tozd/go/x"
 )
 
+func TestInferProjectIDErrors(t *testing.T) {
+	t.Parallel()
+
+	t.Run("invalid path", func(t *testing.T) {
+		t.Parallel()
+
+		_, errE := x.InferGitLabProjectID("/nonexistent/path/does/not/exist")
+		require.Error(t, errE)
+		assert.ErrorIs(t, errE, x.ErrOpenGitRepository)
+	})
+
+	t.Run("no origin remote", func(t *testing.T) {
+		t.Parallel()
+
+		tempDir := t.TempDir()
+		_, err := git.PlainInit(tempDir, false)
+		require.NoError(t, err)
+
+		_, errE := x.InferGitLabProjectID(tempDir)
+		require.Error(t, errE)
+		assert.ErrorIs(t, errE, x.ErrObtainGitRemote)
+	})
+
+}
+
 func TestInferProjectID(t *testing.T) {
 	t.Parallel()
 

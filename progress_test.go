@@ -3,6 +3,7 @@ package x_test
 import (
 	"context"
 	"io"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -17,10 +18,34 @@ const (
 	tickerInterval = 50 * time.Millisecond
 )
 
+func TestCountingReaderEOF(t *testing.T) {
+	t.Parallel()
+
+	cr := x.NewCountingReader(strings.NewReader("hello"))
+
+	data, err := io.ReadAll(cr)
+	require.NoError(t, err)
+	assert.Equal(t, []byte("hello"), data)
+	assert.Equal(t, int64(5), cr.Count())
+}
+
+func TestCounter(t *testing.T) {
+	t.Parallel()
+
+	c := x.NewCounter(0)
+	assert.Equal(t, int64(0), c.Count())
+
+	c.Increment()
+	assert.Equal(t, int64(1), c.Count())
+
+	c.Add(5)
+	assert.Equal(t, int64(6), c.Count())
+}
+
 func TestTicker(t *testing.T) {
 	t.Parallel()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	r, w := io.Pipe()
@@ -80,6 +105,8 @@ func TestTicker(t *testing.T) {
 	assert.Equal(t, int64(10), p.Size)
 	assert.Equal(t, int64(4), p.Count)
 	assert.Equal(t, 40.0, p.Percent()) //nolint:testifylint
+	assert.Positive(t, p.Remaining())
+	assert.False(t, p.Estimated().IsZero())
 
 	cancel()
 

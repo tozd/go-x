@@ -1,6 +1,7 @@
 package x_test
 
 import (
+	"io"
 	"io/fs"
 	"testing"
 	"testing/fstest"
@@ -420,6 +421,29 @@ func TestFilteredFS_Sub(t *testing.T) {
 		assert.ErrorIs(t, err, fs.ErrInvalid)
 	})
 
+	t.Run("sub with invalid path direct", func(t *testing.T) {
+		t.Parallel()
+
+		// fs.Sub intercepts invalid paths before calling FilteredFS.Sub, so call directly.
+		subFS, ok := filtered.(fs.SubFS)
+		require.True(t, ok)
+		sub, err := subFS.Sub("../invalid")
+		require.Error(t, err)
+		assert.Nil(t, sub)
+		assert.ErrorIs(t, err, fs.ErrInvalid)
+	})
+
+	t.Run("sub with dot direct", func(t *testing.T) {
+		t.Parallel()
+
+		// fs.Sub intercepts "." before calling FilteredFS.Sub, so call directly.
+		subFS, ok := filtered.(fs.SubFS)
+		require.True(t, ok)
+		sub, err := subFS.Sub(".")
+		require.NoError(t, err)
+		assert.Equal(t, filtered, sub)
+	})
+
 	t.Run("sub on nonexistent directory", func(t *testing.T) {
 		t.Parallel()
 
@@ -562,6 +586,183 @@ func TestFilteredFS_MultipleExclusions(t *testing.T) {
 		assert.NotContains(t, names, "dir2")
 		assert.NotContains(t, names, "secret")
 	})
+}
+
+func TestEmptyFS(t *testing.T) {
+	t.Parallel()
+
+	testFS := createTestFS()
+	filtered, errE := x.MakeFilteredFS(testFS, "secret")
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Get an emptyFS by subbing into an excluded directory.
+	sub, err := fs.Sub(filtered, "secret")
+	require.NoError(t, err)
+	require.NotNil(t, sub)
+
+	t.Run("open", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := sub.Open("file.txt")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, fs.ErrNotExist)
+	})
+
+	t.Run("readfile", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := fs.ReadFile(sub, "file.txt")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, fs.ErrNotExist)
+	})
+
+	t.Run("readlink", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := fs.ReadLink(sub, "link.txt")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, fs.ErrNotExist)
+	})
+
+	t.Run("lstat", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := fs.Lstat(sub, "file.txt")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, fs.ErrNotExist)
+	})
+
+	t.Run("glob valid pattern", func(t *testing.T) {
+		t.Parallel()
+
+		matches, err := fs.Glob(sub, "*.txt")
+		require.NoError(t, err)
+		assert.Empty(t, matches)
+	})
+
+	t.Run("glob invalid pattern", func(t *testing.T) {
+		t.Parallel()
+
+		globFS, ok := sub.(fs.GlobFS)
+		require.True(t, ok)
+		_, err := globFS.Glob("[invalid")
+		assert.Error(t, err)
+	})
+
+	t.Run("sub valid path", func(t *testing.T) {
+		t.Parallel()
+
+		sub2, err := fs.Sub(sub, "subdir")
+		require.NoError(t, err)
+		assert.NotNil(t, sub2)
+	})
+
+	t.Run("sub dot", func(t *testing.T) {
+		t.Parallel()
+
+		// Call Sub("." ) directly on the emptyFS since fs.Sub short-circuits on ".".
+		subFS, ok := sub.(fs.SubFS)
+		require.True(t, ok)
+		sub2, err := subFS.Sub(".")
+		require.NoError(t, err)
+		assert.NotNil(t, sub2)
+	})
+
+	t.Run("sub invalid path", func(t *testing.T) {
+		t.Parallel()
+
+		// Call Sub directly to bypass fs.Sub's own validation.
+		subFS, ok := sub.(fs.SubFS)
+		require.True(t, ok)
+		sub2, err := subFS.Sub("../invalid")
+		require.Error(t, err)
+		assert.Nil(t, sub2)
+		assert.ErrorIs(t, err, fs.ErrInvalid)
+	})
+}
+
+func TestFilteredFS_ReadLink(t *testing.T) {
+	t.Parallel()
+
+	testFS := fstest.MapFS{
+		"file1.txt": {Data: []byte("content1")},
+		"link.txt": {
+			Mode: fs.ModeSymlink | 0o666,
+			Data: []byte("file1.txt"),
+		},
+		"secret/link.txt": {
+			Mode: fs.ModeSymlink | 0o666,
+			Data: []byte("../file1.txt"),
+		},
+	}
+
+	filtered, errE := x.MakeFilteredFS(testFS, "secret")
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	t.Run("read allowed link", func(t *testing.T) {
+		t.Parallel()
+
+		dest, err := fs.ReadLink(filtered, "link.txt")
+		require.NoError(t, err)
+		assert.Equal(t, "file1.txt", dest)
+	})
+
+	t.Run("read excluded link", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := fs.ReadLink(filtered, "secret/link.txt")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, fs.ErrNotExist)
+	})
+}
+
+func TestFilteredFS_Lstat(t *testing.T) {
+	t.Parallel()
+
+	testFS := createTestFS()
+	filtered, errE := x.MakeFilteredFS(testFS, "secret")
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	t.Run("lstat allowed file", func(t *testing.T) {
+		t.Parallel()
+
+		info, err := fs.Lstat(filtered, "file1.txt")
+		require.NoError(t, err)
+		assert.Equal(t, "file1.txt", info.Name())
+	})
+
+	t.Run("lstat excluded path", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := fs.Lstat(filtered, "secret/password.txt")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, fs.ErrNotExist)
+	})
+}
+
+func TestFilteredFS_filteredFileEOF(t *testing.T) {
+	t.Parallel()
+
+	testFS := createTestFS()
+	filtered, errE := x.MakeFilteredFS(testFS, "secret")
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Open a directory to get a filteredFile.
+	file, err := filtered.Open("dir1")
+	require.NoError(t, err)
+	defer file.Close() //nolint:errcheck
+
+	dirFile, ok := file.(fs.ReadDirFile)
+	require.True(t, ok)
+
+	// Read all entries to exhaust the directory.
+	_, err = dirFile.ReadDir(-1)
+	require.NoError(t, err)
+
+	// Now reading more should return io.EOF.
+	entries, err := dirFile.ReadDir(1)
+	assert.ErrorIs(t, err, io.EOF)
+	assert.Empty(t, entries)
 }
 
 //nolint:dupl
