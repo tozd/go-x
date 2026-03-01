@@ -224,3 +224,13 @@ func NewRetryableResponse(client *retryablehttp.Client, req *retryablehttp.Reque
 	}
 	return r, nil
 }
+
+// RetryableClient returns the retryablehttp.Client if the provided http.Client
+// was obtained from a retryablehttp.Client using its StandardClient method.
+func RetryableClient(client *http.Client) *retryablehttp.Client {
+	transprot, ok := client.Transport.(*retryablehttp.RoundTripper)
+	if !ok {
+		return nil
+	}
+	return transprot.Client
+}

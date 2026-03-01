@@ -159,3 +159,12 @@ func TestRetryableResponseRetryWithContentRange(t *testing.T) {
 	require.NoError(t, err, "% -+#.1v", err)
 	assert.Equal(t, responseBody, string(data))
 }
+
+func TestRetryableClient(t *testing.T) {
+	t.Parallel()
+
+	client := retryablehttp.NewClient()
+	baseClient := client.StandardClient()
+	client2 := x.RetryableClient(baseClient)
+	assert.Equal(t, client, client2)
+}
