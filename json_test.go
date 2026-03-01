@@ -81,7 +81,7 @@ func TestMarshal(t *testing.T) {
 
 	data, errE := x.Marshal(Test{Field: "abc"})
 	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, `{"field":"abc"}`, string(data))
+	assert.Equal(t, `{"field":"abc"}`, string(data)) //nolint:testifylint
 }
 
 func TestDecodeJSON(t *testing.T) {

@@ -38,7 +38,6 @@ func TestInferProjectIDErrors(t *testing.T) {
 		require.Error(t, errE)
 		assert.ErrorIs(t, errE, x.ErrObtainGitRemote)
 	})
-
 }
 
 func TestInferProjectID(t *testing.T) {

@@ -25,6 +25,6 @@ func TestByteSlice2String(t *testing.T) {
 	assert.Equal(t, "hello", s)
 
 	// Empty slice should return empty string.
-	assert.Equal(t, "", x.ByteSlice2String(nil))
-	assert.Equal(t, "", x.ByteSlice2String([]byte{}))
+	assert.Empty(t, x.ByteSlice2String(nil))
+	assert.Empty(t, x.ByteSlice2String([]byte{}))
 }

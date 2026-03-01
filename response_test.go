@@ -183,7 +183,7 @@ func TestResponseSize(t *testing.T) {
 	t.Run("with content length", func(t *testing.T) {
 		t.Parallel()
 
-		resp := &http.Response{
+		resp := &http.Response{ //nolint:exhaustruct
 			ContentLength: 42,
 			Header:        http.Header{},
 		}
@@ -195,7 +195,7 @@ func TestResponseSize(t *testing.T) {
 	t.Run("with x-goog header", func(t *testing.T) {
 		t.Parallel()
 
-		resp := &http.Response{
+		resp := &http.Response{ //nolint:exhaustruct
 			ContentLength: -1,
 			Header: http.Header{
 				"X-Goog-Stored-Content-Length": []string{"100"},
@@ -209,7 +209,7 @@ func TestResponseSize(t *testing.T) {
 	t.Run("missing size", func(t *testing.T) {
 		t.Parallel()
 
-		resp := &http.Response{
+		resp := &http.Response{ //nolint:exhaustruct
 			ContentLength: -1,
 			Header:        http.Header{},
 		}
@@ -246,7 +246,7 @@ func TestNewRetryableResponseNetworkError(t *testing.T) {
 	t.Parallel()
 
 	// Start and immediately close a server so the port is unavailable.
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {}))
+	ts := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {}))
 	addr := ts.URL
 	ts.Close()
 
