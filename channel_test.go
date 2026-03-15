@@ -9,11 +9,28 @@ import (
 	"gitlab.com/tozd/go/x"
 )
 
-func TestRecreatableChannelZeroValue(t *testing.T) {
+func TestRecreatableChannelGetBlocks(t *testing.T) {
 	t.Parallel()
 
 	var c x.RecreatableChannel[int]
-	assert.Nil(t, c.Get())
+
+	got := make(chan (<-chan int), 1)
+	go func() {
+		got <- c.Get()
+	}()
+
+	// Get should be blocking; nothing in got yet.
+	select {
+	case <-got:
+		t.Fatal("Get returned before Recreate was called")
+	default:
+	}
+
+	ch := c.Recreate(0)
+	assert.NotNil(t, ch)
+
+	// Now Get should unblock.
+	assert.NotNil(t, <-got)
 }
 
 func TestRecreatableChannelFirstRecreate(t *testing.T) {

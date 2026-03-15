@@ -8,18 +8,36 @@ import (
 // When recreated, the previous channel is closed and a new one is created.
 //
 // The zero value for a RecreatableChannel is usable but without the first
-// channel. Use Recreate to create the first channel.
+// channel. Use Recreate to create the first channel. Get blocks until
+// the first channel is created.
 //
 // A RecreatableChannel must not be copied after first use.
 type RecreatableChannel[T any] struct {
-	lock sync.RWMutex
+	mu   sync.Mutex
+	cond *sync.Cond
 	ch   chan T
 }
 
+func (c *RecreatableChannel[T]) init() {
+	if c.cond == nil {
+		c.cond = sync.NewCond(&c.mu)
+	}
+}
+
 // Get returns the current channel.
+//
+// It blocks until the first channel is created with Recreate.
 func (c *RecreatableChannel[T]) Get() <-chan T {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.init()
+
+	if c.cond != nil {
+		for c.ch == nil {
+			c.cond.Wait()
+		}
+	}
 
 	return c.ch
 }
@@ -29,13 +47,19 @@ func (c *RecreatableChannel[T]) Get() <-chan T {
 //
 // Use it also to create the first channel.
 func (c *RecreatableChannel[T]) Recreate(size int) chan<- T {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.init()
 
 	if c.ch != nil {
 		close(c.ch)
 	}
 	c.ch = make(chan T, size)
+	if c.cond != nil {
+		c.cond.Broadcast()
+		c.cond = nil
+	}
 
 	return c.ch
 }
