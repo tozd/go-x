@@ -1,7 +1,10 @@
 package x
 
 import (
+	"context"
 	"sync"
+
+	"gitlab.com/tozd/go/errors"
 )
 
 // RecreatableChannel is a channel that can be recreated.
@@ -27,17 +30,30 @@ func (c *RecreatableChannel[T]) init() {
 // Get returns the current channel.
 //
 // It blocks until the first channel is created with Recreate.
-func (c *RecreatableChannel[T]) Get() <-chan T {
+// If ctx is cancelled before that, it returns an error.
+func (c *RecreatableChannel[T]) Get(ctx context.Context) (<-chan T, errors.E) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	c.init()
 
+	// This is based on example for context.AfterFunc from the context package.
+	// See comments there for explanation how it works and why.
+	stop := context.AfterFunc(ctx, func() {
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		c.cond.Broadcast()
+	})
+	defer stop()
+
 	for c.ch == nil {
 		c.cond.Wait()
+		if ctx.Err() != nil {
+			return nil, errors.WithStack(ctx.Err())
+		}
 	}
 
-	return c.ch
+	return c.ch, nil
 }
 
 // Recreate closes the existing channel and creates a new one.
