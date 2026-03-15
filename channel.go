@@ -33,10 +33,8 @@ func (c *RecreatableChannel[T]) Get() <-chan T {
 
 	c.init()
 
-	if c.cond != nil {
-		for c.ch == nil {
-			c.cond.Wait()
-		}
+	for c.ch == nil {
+		c.cond.Wait()
 	}
 
 	return c.ch
@@ -52,13 +50,16 @@ func (c *RecreatableChannel[T]) Recreate(size int) chan<- T {
 
 	c.init()
 
+	first := true
 	if c.ch != nil {
+		first = false
 		close(c.ch)
 	}
+
 	c.ch = make(chan T, size)
-	if c.cond != nil {
+
+	if first {
 		c.cond.Broadcast()
-		c.cond = nil
 	}
 
 	return c.ch
