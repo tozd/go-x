@@ -1,7 +1,10 @@
 package x_test
 
 import (
+	"context"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -169,5 +172,108 @@ func TestDuration(t *testing.T) {
 		var d4 x.Duration
 		err := json.Unmarshal([]byte(`123`), &d4)
 		assert.Error(t, err)
+	})
+}
+
+func TestSaveJSONToDir(t *testing.T) {
+	t.Parallel()
+
+	type doc struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	}
+
+	t.Run("empty slice", func(t *testing.T) {
+		t.Parallel()
+
+		dir := t.TempDir()
+		errE := x.SaveJSONToDir(context.Background(), dir, []doc{}, func(d doc) string {
+			return d.ID
+		})
+		assert.NoError(t, errE, "% -+#.1v", errE) //nolint:testifylint
+
+		entries, err := os.ReadDir(dir)
+		require.NoError(t, err)
+		assert.Empty(t, entries)
+	})
+
+	t.Run("saves multiple documents", func(t *testing.T) {
+		t.Parallel()
+
+		dir := t.TempDir()
+		data := []doc{
+			{ID: "a", Name: "Alice"},
+			{ID: "b", Name: "Bob"},
+		}
+		errE := x.SaveJSONToDir(context.Background(), dir, data, func(d doc) string {
+			return d.ID
+		})
+		assert.NoError(t, errE, "% -+#.1v", errE) //nolint:testifylint
+
+		contentA, err := os.ReadFile(filepath.Join(dir, "a.json")) //nolint:gosec
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"id":"a","name":"Alice"}`, string(contentA))
+		assert.True(t, strings.HasSuffix(string(contentA), "\n"))
+
+		contentB, err := os.ReadFile(filepath.Join(dir, "b.json")) //nolint:gosec
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"id":"b","name":"Bob"}`, string(contentB))
+	})
+
+	t.Run("creates directory if missing", func(t *testing.T) {
+		t.Parallel()
+
+		dir := filepath.Join(t.TempDir(), "sub", "dir")
+		data := []doc{{ID: "c", Name: "Charlie"}}
+		errE := x.SaveJSONToDir(context.Background(), dir, data, func(d doc) string {
+			return d.ID
+		})
+		assert.NoError(t, errE, "% -+#.1v", errE) //nolint:testifylint
+
+		content, err := os.ReadFile(filepath.Join(dir, "c.json")) //nolint:gosec
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"id":"c","name":"Charlie"}`, string(content))
+	})
+
+	t.Run("cancelled context", func(t *testing.T) {
+		t.Parallel()
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		dir := t.TempDir()
+		data := []doc{{ID: "d", Name: "Dave"}}
+		errE := x.SaveJSONToDir(ctx, dir, data, func(d doc) string {
+			return d.ID
+		})
+		assert.Error(t, errE)
+		assert.ErrorIs(t, errE, context.Canceled)
+	})
+
+	t.Run("indented output", func(t *testing.T) {
+		t.Parallel()
+
+		dir := t.TempDir()
+		data := []doc{{ID: "e", Name: "Eve"}}
+		errE := x.SaveJSONToDir(context.Background(), dir, data, func(d doc) string {
+			return d.ID
+		})
+		assert.NoError(t, errE, "% -+#.1v", errE) //nolint:testifylint
+
+		content, err := os.ReadFile(filepath.Join(dir, "e.json")) //nolint:gosec
+		require.NoError(t, err)
+		expected := "{\n  \"id\": \"e\",\n  \"name\": \"Eve\"\n}\n"
+		assert.Equal(t, expected, string(content))
+	})
+
+	t.Run("marshal error", func(t *testing.T) {
+		t.Parallel()
+
+		dir := t.TempDir()
+		data := []chan int{make(chan int)}
+		errE := x.SaveJSONToDir(context.Background(), dir, data, func(_ chan int) string {
+			return "bad"
+		})
+		assert.Error(t, errE)
 	})
 }

@@ -2,8 +2,11 @@ package x
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
+	"os"
+	"path/filepath"
 	"time"
 
 	"gitlab.com/tozd/go/errors"
@@ -134,5 +137,47 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 		return errors.WithDetails(err, "duration", s)
 	}
 	*d = Duration(tmp)
+	return nil
+}
+
+// SaveJSONToDir saves each element of the slice into individual files with JSON representation to a directory.
+func SaveJSONToDir[T any](ctx context.Context, dir string, data []T, filename func(T) string) errors.E {
+	if len(data) == 0 {
+		return nil
+	}
+
+	err := os.MkdirAll(dir, 0o755) //nolint:gosec,mnd
+	if err != nil {
+		return errors.WithDetails(err, "path", dir)
+	}
+
+	for _, doc := range data {
+		if ctx.Err() != nil {
+			return errors.WithStack(ctx.Err())
+		}
+
+		name := filename(doc)
+
+		output, errE := MarshalWithoutEscapeHTML(doc)
+		if errE != nil {
+			errors.Details(errE)["name"] = name
+			return errE
+		}
+
+		var res bytes.Buffer
+		err = json.Indent(&res, output, "", "  ")
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		res.WriteString("\n")
+
+		path := filepath.Join(dir, name+".json")
+
+		err := os.WriteFile(path, res.Bytes(), 0o644) //nolint:gosec,mnd
+		if err != nil {
+			return errors.WithDetails(err, "path", path)
+		}
+	}
+
 	return nil
 }
