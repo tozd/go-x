@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gitlab.com/tozd/go/errors"
 
 	"gitlab.com/tozd/go/x"
 )
@@ -187,8 +188,8 @@ func TestSaveJSONToDir(t *testing.T) {
 		t.Parallel()
 
 		dir := t.TempDir()
-		errE := x.SaveJSONToDir(context.Background(), dir, []doc{}, func(d doc) string {
-			return d.ID
+		errE := x.SaveJSONToDir(context.Background(), dir, []doc{}, func(d doc) (string, errors.E) {
+			return d.ID, nil
 		})
 		assert.NoError(t, errE, "% -+#.1v", errE) //nolint:testifylint
 
@@ -205,8 +206,8 @@ func TestSaveJSONToDir(t *testing.T) {
 			{ID: "a", Name: "Alice"},
 			{ID: "b", Name: "Bob"},
 		}
-		errE := x.SaveJSONToDir(context.Background(), dir, data, func(d doc) string {
-			return d.ID
+		errE := x.SaveJSONToDir(context.Background(), dir, data, func(d doc) (string, errors.E) {
+			return d.ID, nil
 		})
 		assert.NoError(t, errE, "% -+#.1v", errE) //nolint:testifylint
 
@@ -225,8 +226,8 @@ func TestSaveJSONToDir(t *testing.T) {
 
 		dir := filepath.Join(t.TempDir(), "sub", "dir")
 		data := []doc{{ID: "c", Name: "Charlie"}}
-		errE := x.SaveJSONToDir(context.Background(), dir, data, func(d doc) string {
-			return d.ID
+		errE := x.SaveJSONToDir(context.Background(), dir, data, func(d doc) (string, errors.E) {
+			return d.ID, nil
 		})
 		assert.NoError(t, errE, "% -+#.1v", errE) //nolint:testifylint
 
@@ -243,8 +244,8 @@ func TestSaveJSONToDir(t *testing.T) {
 
 		dir := t.TempDir()
 		data := []doc{{ID: "d", Name: "Dave"}}
-		errE := x.SaveJSONToDir(ctx, dir, data, func(d doc) string {
-			return d.ID
+		errE := x.SaveJSONToDir(ctx, dir, data, func(d doc) (string, errors.E) {
+			return d.ID, nil
 		})
 		assert.Error(t, errE)
 		assert.ErrorIs(t, errE, context.Canceled)
@@ -255,8 +256,8 @@ func TestSaveJSONToDir(t *testing.T) {
 
 		dir := t.TempDir()
 		data := []doc{{ID: "e", Name: "Eve"}}
-		errE := x.SaveJSONToDir(context.Background(), dir, data, func(d doc) string {
-			return d.ID
+		errE := x.SaveJSONToDir(context.Background(), dir, data, func(d doc) (string, errors.E) {
+			return d.ID, nil
 		})
 		assert.NoError(t, errE, "% -+#.1v", errE) //nolint:testifylint
 
@@ -266,13 +267,25 @@ func TestSaveJSONToDir(t *testing.T) {
 		assert.Equal(t, expected, string(content))
 	})
 
+	t.Run("filename error", func(t *testing.T) {
+		t.Parallel()
+
+		dir := t.TempDir()
+		data := []doc{{ID: "f", Name: "Frank"}}
+		errE := x.SaveJSONToDir(context.Background(), dir, data, func(_ doc) (string, errors.E) {
+			return "", errors.New("bad filename")
+		})
+		assert.Error(t, errE)
+		assert.EqualError(t, errE, "bad filename")
+	})
+
 	t.Run("marshal error", func(t *testing.T) {
 		t.Parallel()
 
 		dir := t.TempDir()
 		data := []chan int{make(chan int)}
-		errE := x.SaveJSONToDir(context.Background(), dir, data, func(_ chan int) string {
-			return "bad"
+		errE := x.SaveJSONToDir(context.Background(), dir, data, func(_ chan int) (string, errors.E) {
+			return "bad", nil
 		})
 		assert.Error(t, errE)
 	})

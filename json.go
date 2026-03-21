@@ -141,7 +141,7 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 }
 
 // SaveJSONToDir saves each element of the slice into individual files with JSON representation to a directory.
-func SaveJSONToDir[T any](ctx context.Context, dir string, data []T, filename func(T) string) errors.E {
+func SaveJSONToDir[T any](ctx context.Context, dir string, data []T, filename func(T) (string, errors.E)) errors.E {
 	if len(data) == 0 {
 		return nil
 	}
@@ -156,7 +156,10 @@ func SaveJSONToDir[T any](ctx context.Context, dir string, data []T, filename fu
 			return errors.WithStack(ctx.Err())
 		}
 
-		name := filename(doc)
+		name, errE := filename(doc)
+		if errE != nil {
+			return errE
+		}
 
 		output, errE := MarshalWithoutEscapeHTML(doc)
 		if errE != nil {
