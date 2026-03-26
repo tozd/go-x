@@ -241,7 +241,9 @@ func ResponseSize(resp *http.Response) (int64, errors.E) {
 	}
 
 	if length == -1 {
-		return 0, errors.WithStack(ErrResponseMissingSize)
+		errE := errors.WithStack(ErrResponseMissingSize)
+		errors.Details(errE)["header"] = resp.Header
+		return 0, errE
 	}
 
 	return length, nil
