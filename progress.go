@@ -87,11 +87,17 @@ func (p Progress) Percent() float64 {
 }
 
 // Remaining returns the remaining time to completion.
+//
+// It returns a negative duration when the remaining time cannot be estimated yet, i.e. before any
+// progress has been made or right after size has changed. Estimated then returns the zero time.Time.
 func (p Progress) Remaining() time.Duration {
 	return p.remaining
 }
 
 // Estimated returns the estimated time of completion.
+//
+// It returns the zero time.Time when the time of completion cannot be estimated yet, i.e. before any
+// progress has been made or right after size has changed. Remaining then returns a negative duration.
 func (p Progress) Estimated() time.Time {
 	return p.estimated
 }
@@ -107,8 +113,17 @@ func (t *Ticker) Stop() {
 	t.stop()
 }
 
+// notEstimated is reported as the remaining time while it cannot be estimated yet. It is negative so it
+// is clearly an invalid value.
+const notEstimated = -1 * time.Second
+
 // NewTicker creates a new Ticker which at regular interval reports the
 // progress as reported by counters count and size.
+//
+// The remaining and estimated completion times are computed from the rate of progress observed so far.
+// Whenever size changes, that estimate is reset and recomputed only from the progress made after the
+// change, so that a changing total (e.g. when additional work is discovered) does not skew the estimate.
+// The reported Started and Elapsed, and thus Percent, always cover the whole run.
 //
 // counter interface is defined as:
 //
@@ -124,6 +139,12 @@ func NewTicker(ctx context.Context, count, size counter, interval time.Duration)
 		defer cancel()
 		defer close(output)
 		defer ticker.Stop()
+		// The remaining and estimated times are extrapolated from the progress made since baseStarted,
+		// at which point baseCount had already been done. Both are reset to the current moment and count
+		// whenever size changes so that the estimate reflects only the rate of the work after the change.
+		baseStarted := started
+		var baseCount int64
+		prevSize := size.Count()
 		for {
 			select {
 			case <-ctx.Done():
@@ -131,17 +152,28 @@ func NewTicker(ctx context.Context, count, size counter, interval time.Duration)
 			case now := <-ticker.C:
 				c := count.Count()
 				s := size.Count()
-				elapsed := now.Sub(started)
-				ratio := float64(c) / float64(s)
-				total := time.Duration(float64(elapsed) / ratio)
-				estimated := started.Add(total)
+				if s != prevSize {
+					baseStarted = now
+					baseCount = c
+					prevSize = s
+				}
+				remaining := notEstimated
+				var estimated time.Time
+				// We can extrapolate only once there is some progress since the baseline. Right after a size
+				// change (or before any progress) there is none, so remaining stays the negative sentinel and
+				// estimated the zero time.Time to signal that the estimate is not available yet.
+				if c > baseCount {
+					baseElapsed := now.Sub(baseStarted)
+					remaining = time.Duration(float64(baseElapsed) * float64(s-c) / float64(c-baseCount))
+					estimated = now.Add(remaining)
+				}
 				progress := Progress{
 					Count:     c,
 					Size:      s,
 					Started:   started,
 					Current:   now,
-					Elapsed:   elapsed,
-					remaining: estimated.Sub(now),
+					Elapsed:   now.Sub(started),
+					remaining: remaining,
 					estimated: estimated,
 				}
 				select {

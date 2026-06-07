@@ -138,3 +138,68 @@ func TestTicker(t *testing.T) {
 	default:
 	}
 }
+
+func TestTickerSizeChange(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	count := x.NewCounter(0)
+	size := x.NewCounter(10)
+
+	ticker := x.NewTicker(ctx, count, size, tickerInterval)
+	require.NotNil(t, ticker)
+	defer ticker.Stop()
+
+	l := sync.Mutex{}
+	progress := []x.Progress{}
+
+	go func() {
+		for p := range ticker.C {
+			func() {
+				l.Lock()
+				defer l.Unlock()
+				progress = append(progress, p)
+			}()
+		}
+	}()
+
+	last := func() x.Progress {
+		l.Lock()
+		defer l.Unlock()
+		require.NotEmpty(t, progress)
+		return progress[len(progress)-1]
+	}
+
+	// With some progress made, the estimate is available.
+	count.Add(4)
+	time.Sleep(2 * tickerInterval)
+
+	p := last()
+	assert.Equal(t, int64(10), p.Size)
+	assert.Equal(t, int64(4), p.Count)
+	assert.Positive(t, p.Remaining())
+	assert.False(t, p.Estimated().IsZero())
+
+	// Size changes (more work is discovered) without any further progress. The estimate is
+	// reset and, with no progress since the change, it is not available anymore.
+	size.Add(10)
+	time.Sleep(2 * tickerInterval)
+
+	p = last()
+	assert.Equal(t, int64(20), p.Size)
+	assert.Equal(t, int64(4), p.Count)
+	assert.Negative(t, p.Remaining())
+	assert.True(t, p.Estimated().IsZero())
+
+	// Once there is progress after the size change, the estimate is available again.
+	count.Add(8)
+	time.Sleep(2 * tickerInterval)
+
+	p = last()
+	assert.Equal(t, int64(20), p.Size)
+	assert.Equal(t, int64(12), p.Count)
+	assert.Positive(t, p.Remaining())
+	assert.False(t, p.Estimated().IsZero())
+}
